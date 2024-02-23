@@ -110,9 +110,7 @@ func (obj historyFallObj) scan() {
 		if diff.Type != 0 { //только то что претерпело изменений
 
 			if diff.Type == -1 {
-				buf := editPointObj{position, diff.Text, ""}
-				historyList = append(historyList, buf)
-				obj.log.Debug("ff", zap.Any("list", historyList), zap.Any("buf", buf))
+				historyList = append(historyList, editPointObj{position, diff.Text, ""})
 			}
 			if diff.Type == 1 {
 				pos := len(historyList) - 1
@@ -131,5 +129,7 @@ func (obj historyFallObj) scan() {
 		}
 	}
 
-	obj.log.Debug("Результат", zap.Any("list", historyList))
+	for _, fall := range historyList {
+		obj.log.Debug("fall", zap.Any("pos", fall.pos), zap.Any("from", fall.from), zap.Any("to", fall.to))
+	}
 }
