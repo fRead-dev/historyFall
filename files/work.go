@@ -2,24 +2,14 @@ package files
 
 import (
 	"bufio"
-	"encoding/base64"
-	"github.com/sergi/go-diff/diffmatchpatch"
 	"go.uber.org/zap"
 	"io/ioutil"
 	"os"
-	"strconv"
-	"strings"
 )
 
 type historyFallObj struct {
 	log *zap.Logger
 	dir string
-}
-
-type editPointObj struct {
-	pos  uint64 //Позиция указателя
-	from string //Начальная строка
-	to   string //Конечная строка
 }
 
 func GO(log *zap.Logger) {
@@ -89,31 +79,7 @@ func (obj historyFallObj) readFile() {
 // Генерация файла более старой версии по сравнению
 func (obj historyFallObj) generateOldVersion(comparison string, defFile string, saveOldFile string) error {
 
-	breakWords := strings.Split(comparison, ";")
-	var historyList []editPointObj //Массив векторов изменений
-
-	//Перебор полученого разбиения
-	for _, fall := range breakWords { //Перебор точек изменения
-		if len(fall) > 0 {
-			buf := strings.Split(fall, ":")
-			if len(buf) != 3 {
-				continue
-			}
-
-			var position uint64
-			var from string
-			var to string
-
-			position, _ = strconv.ParseUint(buf[0], 10, 64)
-
-			bytes, _ := base64.StdEncoding.DecodeString(buf[1])
-			from = string(bytes)
-			bytes, _ = base64.StdEncoding.DecodeString(buf[2])
-			to = string(bytes)
-
-			historyList = append(historyList, editPointObj{position, from, to})
-		}
-	}
+	historyList := obj.DecodeStoryVector(&comparison)
 
 	obj.log.Info("glob", zap.Any("historyList", historyList))
 
@@ -154,45 +120,7 @@ func (obj historyFallObj) comparison(file1 string, file2 string) (string, error)
 		return "", err
 	}
 
-	dmp := diffmatchpatch.New()
-	diffs := dmp.DiffMain(string(file1Bytes), string(file2Bytes), false)
-
-	var historyList editPointObj //	Буферная структура точки изменения
-	var returnSlice string       //	Текстовый срез возвращаемых значений
-	var position uint64          //	Позиция по тексту
-
-	position = 0
-
-	for _, diff := range diffs {
-		if diff.Type != 0 { //только то что претерпело изменений
-
-			if diff.Type == -1 {
-				historyList.pos = position
-				historyList.from = diff.Text
-				historyList.to = ""
-			}
-
-			if diff.Type == 1 {
-
-				if historyList.pos == position {
-					historyList.to = diff.Text
-					returnSlice += "" + strconv.FormatUint(historyList.pos, 10) + ":" + base64.StdEncoding.EncodeToString([]byte(historyList.from)) + ":" + base64.StdEncoding.EncodeToString([]byte(historyList.to)) + ";"
-
-				} else {
-					returnSlice += "" + strconv.FormatUint(position, 10) + "::" + base64.StdEncoding.EncodeToString([]byte(diff.Text)) + ";"
-				}
-
-				//Обнуление
-				historyList = editPointObj{}
-			}
-
-		}
-
-		//Инкремент только по первому файлу
-		if diff.Type > -1 {
-			position += uint64(len(diff.Text))
-		}
-	}
+	returnSlice := obj.generateStoryVector(&file1Bytes, &file2Bytes)
 
 	return returnSlice, nil
 }
