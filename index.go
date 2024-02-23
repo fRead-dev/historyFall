@@ -1,6 +1,7 @@
 package main
 
 import (
+	files "historyFall/files"
 	system "historyFall/system"
 	"strconv"
 )
@@ -10,4 +11,5 @@ func main() {
 	defer log.Sync()                 // Важно вызывать Sync(), чтобы гарантировать запись всех сообщений перед завершением программы
 	log.Warn("Start '" + system.Info.Name + "'[" + strconv.Itoa(system.Info.Group) + "]:" + strconv.Itoa(system.Info.Instance))
 
+	files.GO(log)
 }
