@@ -3,12 +3,12 @@ package files
 import (
 	"bufio"
 	"encoding/base64"
+	"github.com/sergi/go-diff/diffmatchpatch"
 	"go.uber.org/zap"
 	"io/ioutil"
 	"os"
 	"strconv"
-
-	"github.com/sergi/go-diff/diffmatchpatch"
+	"strings"
 )
 
 type historyFallObj struct {
@@ -24,7 +24,10 @@ func GO(log *zap.Logger) {
 	obj.dir = "./files/.history/"
 	obj.log = log
 
-	obj.scan()
+	comparison, _ := obj.comparison(obj.dir+"text.1", obj.dir+"text.2")
+	obj.log.Info("Полученые расхлжения", zap.String("", comparison))
+
+	obj.generateOldVersion(comparison, obj.dir+"text.2", obj.dir+"text.oldFile")
 
 }
 
@@ -77,34 +80,60 @@ func (obj historyFallObj) readFile() {
 	}
 }
 
-// сравнение файлов
-func (obj historyFallObj) scan() {
-	file1Path := obj.dir + "text.1"
-	file2Path := obj.dir + "text.2"
+// Генерация файла более старой версии по сравнению
+func (obj historyFallObj) generateOldVersion(comparison string, defFile string, saveOldFile string) error {
 
-	file1Bytes, err := ioutil.ReadFile(file1Path)
-	if err != nil {
-		obj.log.Error("Ошибка чтения файла", zap.String("file", file1Path), zap.Error(err))
-		return
+	breakWords := strings.Split(comparison, ";")
+	for _, historyList := range breakWords { //Перебор точек изменения
+		if len(historyList) > 0 {
+			buf := strings.Split(historyList, ":")
+			if len(buf) != 3 {
+				continue
+			}
+
+			var position uint64
+			var from string
+			var to string
+
+			position, _ = strconv.ParseUint(buf[0], 10, 64)
+
+			bytes, _ := base64.StdEncoding.DecodeString(buf[1])
+			from = string(bytes)
+			bytes, _ = base64.StdEncoding.DecodeString(buf[2])
+			to = string(bytes)
+
+			obj.log.Debug("Точa изменения", zap.Any("position", position), zap.Any("from", from), zap.Any("to", to))
+		}
 	}
 
-	file2Bytes, err := ioutil.ReadFile(file2Path)
+	return nil
+}
+
+// сравнение двух файлов
+func (obj historyFallObj) comparison(file1 string, file2 string) (string, error) {
+
+	file1Bytes, err := ioutil.ReadFile(file1)
 	if err != nil {
-		obj.log.Error("Ошибка чтения файла", zap.String("file", file2Path), zap.Error(err))
-		return
+		return "", err
+	}
+
+	file2Bytes, err := ioutil.ReadFile(file2)
+	if err != nil {
+		return "", err
 	}
 
 	dmp := diffmatchpatch.New()
 	diffs := dmp.DiffMain(string(file1Bytes), string(file2Bytes), false)
 
 	type editPointObj struct {
-		pos  uint64 `json:"pos"`
-		from string `json:"from"`
-		to   string `json:"to"`
+		pos  uint64 //Позиция указателя
+		from string //Начальная строка
+		to   string //Конечная строка
 	}
 
-	var historyList []editPointObj
-	var position uint64
+	var historyList editPointObj //	Буферная структура точки изменения
+	var returnSlice string       //	Текстовый срез возвращаемых значений
+	var position uint64          //	Позиция по тексту
 
 	position = 0
 
@@ -112,31 +141,32 @@ func (obj historyFallObj) scan() {
 		if diff.Type != 0 { //только то что претерпело изменений
 
 			if diff.Type == -1 {
-				historyList = append(historyList, editPointObj{position, diff.Text, ""})
+				historyList.pos = position
+				historyList.from = diff.Text
+				historyList.to = ""
 			}
-			if diff.Type == 1 {
-				pos := len(historyList) - 1
 
-				if historyList[pos].pos == position {
-					historyList[pos].to = diff.Text
+			if diff.Type == 1 {
+
+				if historyList.pos == position {
+					historyList.to = diff.Text
+					returnSlice += "" + strconv.FormatUint(historyList.pos, 10) + ":" + base64.StdEncoding.EncodeToString([]byte(historyList.from)) + ":" + base64.StdEncoding.EncodeToString([]byte(historyList.to)) + ";"
+
 				} else {
-					historyList = append(historyList, editPointObj{position, "", diff.Text})
+					returnSlice += "" + strconv.FormatUint(position, 10) + "::" + base64.StdEncoding.EncodeToString([]byte(diff.Text)) + ";"
 				}
+
+				//Обнуление
+				historyList = editPointObj{}
 			}
 
 		}
 
+		//Инкремент только по первому файлу
 		if diff.Type > -1 {
 			position += uint64(len(diff.Text))
 		}
 	}
 
-	for _, fall := range historyList {
-		obj.log.Debug("fall", zap.Any("pos", fall.pos), zap.Any("from", fall.from), zap.Any("to", fall.to))
-
-		data := "" + strconv.FormatUint(fall.pos, 10) + ":" + base64.StdEncoding.EncodeToString([]byte(fall.from)) + ":" + base64.StdEncoding.EncodeToString([]byte(fall.to))
-
-		obj.log.Debug("in", zap.Any("data", data))
-
-	}
+	return returnSlice, nil
 }
