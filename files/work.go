@@ -2,9 +2,11 @@ package files
 
 import (
 	"bufio"
+	"encoding/base64"
 	"go.uber.org/zap"
 	"io/ioutil"
 	"os"
+	"strconv"
 
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
@@ -96,9 +98,9 @@ func (obj historyFallObj) scan() {
 	diffs := dmp.DiffMain(string(file1Bytes), string(file2Bytes), false)
 
 	type editPointObj struct {
-		pos  uint64
-		from string
-		to   string
+		pos  uint64 `json:"pos"`
+		from string `json:"from"`
+		to   string `json:"to"`
 	}
 
 	var historyList []editPointObj
@@ -118,7 +120,7 @@ func (obj historyFallObj) scan() {
 				if historyList[pos].pos == position {
 					historyList[pos].to = diff.Text
 				} else {
-					obj.log.Error("Ошибка в сопоставлении", zap.Uint64("pos", position), zap.Any("obj", diff))
+					historyList = append(historyList, editPointObj{position, "", diff.Text})
 				}
 			}
 
@@ -131,5 +133,10 @@ func (obj historyFallObj) scan() {
 
 	for _, fall := range historyList {
 		obj.log.Debug("fall", zap.Any("pos", fall.pos), zap.Any("from", fall.from), zap.Any("to", fall.to))
+
+		data := "" + strconv.FormatUint(fall.pos, 10) + ":" + base64.StdEncoding.EncodeToString([]byte(fall.from)) + ":" + base64.StdEncoding.EncodeToString([]byte(fall.to))
+
+		obj.log.Debug("in", zap.Any("data", data))
+
 	}
 }
