@@ -16,6 +16,12 @@ type historyFallObj struct {
 	dir string
 }
 
+type editPointObj struct {
+	pos  uint64 //Позиция указателя
+	from string //Начальная строка
+	to   string //Конечная строка
+}
+
 func GO(log *zap.Logger) {
 	log.Info("Work from file")
 
@@ -84,9 +90,12 @@ func (obj historyFallObj) readFile() {
 func (obj historyFallObj) generateOldVersion(comparison string, defFile string, saveOldFile string) error {
 
 	breakWords := strings.Split(comparison, ";")
-	for _, historyList := range breakWords { //Перебор точек изменения
-		if len(historyList) > 0 {
-			buf := strings.Split(historyList, ":")
+	var historyList []editPointObj //Массив векторов изменений
+
+	//Перебор полученого разбиения
+	for _, fall := range breakWords { //Перебор точек изменения
+		if len(fall) > 0 {
+			buf := strings.Split(fall, ":")
 			if len(buf) != 3 {
 				continue
 			}
@@ -102,8 +111,31 @@ func (obj historyFallObj) generateOldVersion(comparison string, defFile string, 
 			bytes, _ = base64.StdEncoding.DecodeString(buf[2])
 			to = string(bytes)
 
-			obj.log.Debug("Точa изменения", zap.Any("position", position), zap.Any("from", from), zap.Any("to", to))
+			historyList = append(historyList, editPointObj{position, from, to})
 		}
+	}
+
+	obj.log.Info("glob", zap.Any("historyList", historyList))
+
+	// Открываем файл для чтения
+	file, err := os.Open(defFile)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Создаем новый сканер, который будет читать из файла
+	scanner := bufio.NewScanner(file)
+
+	// Читаем файл построчно
+	for scanner.Scan() {
+		line := scanner.Text()
+		obj.log.Debug(line)
+	}
+
+	//Отсечение если выбило ошибку
+	if err := scanner.Err(); err != nil {
+		return err
 	}
 
 	return nil
@@ -124,12 +156,6 @@ func (obj historyFallObj) comparison(file1 string, file2 string) (string, error)
 
 	dmp := diffmatchpatch.New()
 	diffs := dmp.DiffMain(string(file1Bytes), string(file2Bytes), false)
-
-	type editPointObj struct {
-		pos  uint64 //Позиция указателя
-		from string //Начальная строка
-		to   string //Конечная строка
-	}
 
 	var historyList editPointObj //	Буферная структура точки изменения
 	var returnSlice string       //	Текстовый срез возвращаемых значений
