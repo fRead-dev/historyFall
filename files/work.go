@@ -3,7 +3,10 @@ package files
 import (
 	"bufio"
 	"go.uber.org/zap"
+	"io/ioutil"
 	"os"
+
+	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
 type historyFallObj struct {
@@ -19,8 +22,8 @@ func GO(log *zap.Logger) {
 	obj.dir = "./files/.history/"
 	obj.log = log
 
-	obj.writeFile()
-	obj.readFile()
+	obj.scan()
+
 }
 
 // Запись данных в файл
@@ -69,5 +72,39 @@ func (obj historyFallObj) readFile() {
 	// Проверяем наличие ошибок после завершения сканирования
 	if err := scanner.Err(); err != nil {
 		obj.log.Error("Ошибка сканирования файла", zap.Error(err))
+	}
+}
+
+// сравнение файлов
+func (obj historyFallObj) scan() {
+	file1Path := obj.dir + "text.1"
+	file2Path := obj.dir + "text.2"
+
+	file1Bytes, err := ioutil.ReadFile(file1Path)
+	if err != nil {
+		obj.log.Error("Ошибка чтения файла", zap.String("file", file1Path), zap.Error(err))
+		return
+	}
+
+	file2Bytes, err := ioutil.ReadFile(file2Path)
+	if err != nil {
+		obj.log.Error("Ошибка чтения файла", zap.String("file", file2Path), zap.Error(err))
+		return
+	}
+
+	dmp := diffmatchpatch.New()
+	diffs := dmp.DiffMain(string(file1Bytes), string(file2Bytes), false)
+
+	var position uint64
+	position = 0
+
+	for _, diff := range diffs {
+		if diff.Type != 0 { //только то что претерпело изменений
+			obj.log.Debug("Различия между файлом 1 и файлом 2:", zap.Uint64("pos", position), zap.Any("obj", diff))
+		}
+
+		if diff.Type > -1 {
+			position += uint64(len(diff.Text))
+		}
 	}
 }
