@@ -61,9 +61,9 @@ var Info = projectObj{
 
 // Обьект конфигурации логгера
 var ZapConf = zap.Config{
-	Level:            zap.NewAtomicLevelAt(zap.InfoLevel), // DebugLevel | InfoLevel | WarnLevel | ErrorLevel
-	Encoding:         "console",                           // "json" или "console" для консольного вывода
-	OutputPaths:      []string{"stdout"},                  // Можно указать несколько путей
+	Level:            zap.NewAtomicLevelAt(zap.DebugLevel), // DebugLevel | InfoLevel | WarnLevel | ErrorLevel
+	Encoding:         "console",                            // "json" или "console" для консольного вывода
+	OutputPaths:      []string{"stdout"},                   // Можно указать несколько путей
 	ErrorOutputPaths: []string{"stderr"},
 
 	EncoderConfig: zapcore.EncoderConfig{

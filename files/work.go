@@ -1,6 +1,7 @@
 package files
 
 import (
+	"bufio"
 	"go.uber.org/zap"
 	"os"
 )
@@ -19,6 +20,7 @@ func GO(log *zap.Logger) {
 	obj.log = log
 
 	obj.writeFile()
+	obj.readFile()
 }
 
 // Запись данных в файл
@@ -42,4 +44,30 @@ func (obj historyFallObj) writeFile() {
 	}
 
 	obj.log.Info("Данные записаны в файл")
+}
+
+// Построчное чтение файла
+func (obj historyFallObj) readFile() {
+	// Открываем файл для чтения
+	file, err := os.Open(obj.dir + "text.1")
+	if err != nil {
+		obj.log.Error("Ошибка открытия файла", zap.Error(err))
+		return
+	}
+	defer file.Close()
+
+	// Создаем новый сканер, который будет читать из файла
+	scanner := bufio.NewScanner(file)
+
+	// Читаем файл построчно
+	for scanner.Scan() {
+		// scanner.Text() содержит текущую строку
+		line := scanner.Text()
+		obj.log.Debug(line)
+	}
+
+	// Проверяем наличие ошибок после завершения сканирования
+	if err := scanner.Err(); err != nil {
+		obj.log.Error("Ошибка сканирования файла", zap.Error(err))
+	}
 }
