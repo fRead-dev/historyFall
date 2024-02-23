@@ -52,25 +52,48 @@ func (obj historyFallObj) DecodeStoryVector(comparison *string) []EditPointObj {
 	//Перебор полученого разбиения
 	for _, fall := range breakWords { //Перебор точек изменения
 		if len(fall) > 0 {
-			buf := strings.Split(fall, ":")
 
-			//Отсечение если обьект невалидной длинны
+			//	Первичное разбиение
+			buf := strings.Split(fall, "-")
+			if len(buf) != 2 {
+				continue
+			}
+
+			//	Проверка на CRC
+			hash := SHA1(buf[0])
+			hash = hash[(len(hash) - 4):]
+			if hash != buf[1] {
+				continue
+			}
+
+			//	Основное разбиение
+			fall = buf[0]
+			buf = strings.Split(fall, ":")
 			if len(buf) != 3 {
 				continue
 			}
 
-			//var position uint64
-			//var from string
-			//var to string
+			//	Инициализация финального буфера
+			var position uint64
+			var text string
+			var isInsert bool
 
-			//position, _ = strconv.ParseUint(buf[0], 10, 64)
+			//	Получения позиции
+			position, _ = strconv.ParseUint(buf[0], 10, 64)
 
-			//bytes, _ := base64.StdEncoding.DecodeString(buf[1])
-			//from = string(bytes)
-			//bytes, _ = base64.StdEncoding.DecodeString(buf[2])
-			//to = string(bytes)
+			//	Получение текста
+			bytes, _ := base64.StdEncoding.DecodeString(buf[1])
+			text = string(bytes)
 
-			//historyList = append(historyList, EditPointObj{position, from, to})
+			//	Получение типа изменения
+			if buf[1] == "1" {
+				isInsert = true
+			} else {
+				isInsert = false
+			}
+
+			//	Внесение в буфер выдачи
+			historyList = append(historyList, EditPointObj{position, text, isInsert})
 		}
 	}
 
