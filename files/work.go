@@ -95,16 +95,41 @@ func (obj historyFallObj) scan() {
 	dmp := diffmatchpatch.New()
 	diffs := dmp.DiffMain(string(file1Bytes), string(file2Bytes), false)
 
+	type editPointObj struct {
+		pos  uint64
+		from string
+		to   string
+	}
+
+	var historyList []editPointObj
 	var position uint64
+
 	position = 0
 
 	for _, diff := range diffs {
 		if diff.Type != 0 { //только то что претерпело изменений
-			obj.log.Debug("Различия между файлом 1 и файлом 2:", zap.Uint64("pos", position), zap.Any("obj", diff))
+
+			if diff.Type == -1 {
+				buf := editPointObj{position, diff.Text, ""}
+				historyList = append(historyList, buf)
+				obj.log.Debug("ff", zap.Any("list", historyList), zap.Any("buf", buf))
+			}
+			if diff.Type == 1 {
+				pos := len(historyList) - 1
+
+				if historyList[pos].pos == position {
+					historyList[pos].to = diff.Text
+				} else {
+					obj.log.Error("Ошибка в сопоставлении", zap.Uint64("pos", position), zap.Any("obj", diff))
+				}
+			}
+
 		}
 
 		if diff.Type > -1 {
 			position += uint64(len(diff.Text))
 		}
 	}
+
+	obj.log.Debug("Результат", zap.Any("list", historyList))
 }
