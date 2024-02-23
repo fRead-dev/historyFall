@@ -5,6 +5,7 @@ import (
 	"go.uber.org/zap"
 	"io/ioutil"
 	"os"
+	"strconv"
 )
 
 type historyFallObj struct {
@@ -83,7 +84,9 @@ func (obj historyFallObj) generateOldVersion(comparison string, defFile string, 
 	//парсим вектор в точки
 	historyList := obj.DecodeStoryVector(&comparison)
 
-	//for _, gggggg := range historyList {obj.log.Debug(strconv.FormatUint(gggggg.pos, 10), zap.Any("from", gggggg.from), zap.Any("to", gggggg.to))}
+	for _, gggggg := range historyList {
+		obj.log.Debug(strconv.FormatUint(gggggg.pos, 10), zap.Any("text", gggggg.text), zap.Any("isInsert", gggggg.isInsert))
+	}
 
 	// Открываем файл для чтения
 	file, err := os.Open(defFile)

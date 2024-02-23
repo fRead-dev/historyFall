@@ -86,7 +86,7 @@ func (obj historyFallObj) DecodeStoryVector(comparison *string) []EditPointObj {
 			text = string(bytes)
 
 			//	Получение типа изменения
-			if buf[1] == "1" {
+			if buf[2] == "1" {
 				isInsert = true
 			} else {
 				isInsert = false
