@@ -5,6 +5,7 @@ import (
 	"go.uber.org/zap"
 	"io/ioutil"
 	"os"
+	"strconv"
 )
 
 type historyFallObj struct {
@@ -20,8 +21,9 @@ func GO(log *zap.Logger) {
 	obj.dir = "./files/.history/"
 	obj.log = log
 
+	//получение веткора изменений между файлами
 	comparison, _ := obj.comparison(obj.dir+"text.1", obj.dir+"text.2")
-	obj.log.Info("Полученые расхлжения", zap.String("", comparison))
+	obj.log.Info("Полученые расхлжения", zap.String("comparison", comparison))
 
 	obj.generateOldVersion(comparison, obj.dir+"text.2", obj.dir+"text.oldFile")
 
@@ -79,9 +81,12 @@ func (obj historyFallObj) readFile() {
 // Генерация файла более старой версии по сравнению
 func (obj historyFallObj) generateOldVersion(comparison string, defFile string, saveOldFile string) error {
 
+	//парсим вектор в точки
 	historyList := obj.DecodeStoryVector(&comparison)
 
-	obj.log.Info("glob", zap.Any("historyList", historyList))
+	for _, gggggg := range historyList {
+		obj.log.Debug(strconv.FormatUint(gggggg.pos, 10), zap.Any("from", gggggg.from), zap.Any("to", gggggg.to))
+	}
 
 	// Открываем файл для чтения
 	file, err := os.Open(defFile)
@@ -90,13 +95,50 @@ func (obj historyFallObj) generateOldVersion(comparison string, defFile string, 
 	}
 	defer file.Close()
 
-	// Создаем новый сканер, который будет читать из файла
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(file) // 	Создаем новый сканер, который будет читать из файла
+	var pos uint32 = 0                //	Координата по истории векторов
+	var size uint64 = 0               //	Координата размерности файла
 
 	// Читаем файл построчно
 	for scanner.Scan() {
-		line := scanner.Text()
-		obj.log.Debug(line)
+		line := scanner.Bytes()
+		var splitPos int64 = 0
+
+		//Пропускаем строку если там нет изменений
+		for historyList[pos].pos <= (size + uint64(len(line))) {
+
+			positionBreak := size
+			if positionBreak > 0 {
+				positionBreak -= historyList[pos].pos
+			} else {
+				positionBreak += historyList[pos].pos
+			}
+
+			newLine := line[:(int64(positionBreak) + splitPos)]
+			newLine = append(newLine, []byte(historyList[pos].from)...)
+			//splitPos -= int64(len(historyList[pos].to) - len(historyList[pos].from))
+
+			newLine = append(newLine, line[(positionBreak+uint64(len(historyList[pos].to))):]...)
+
+			obj.log.Debug("TEXT", zap.Any("newLine", string(newLine)),
+				zap.Any("size", size),
+				zap.Any("line", len(line)),
+				zap.Any("pos", historyList[pos].pos),
+				zap.Any("to", historyList[pos].to),
+				zap.Any("from", historyList[pos].from),
+				zap.Any("positionBreak", positionBreak),
+				zap.Any("pos.to", uint64(len(historyList[pos].to))),
+			)
+
+			line = newLine
+
+			//	инкремент точки изменений
+			pos++
+		}
+
+		//	Инкремент общего размера
+		size += uint64(len(line))
+		break
 	}
 
 	//Отсечение если выбило ошибку
@@ -120,6 +162,7 @@ func (obj historyFallObj) comparison(file1 string, file2 string) (string, error)
 		return "", err
 	}
 
+	//Получаем вектор изменений
 	returnSlice := obj.generateStoryVector(&file1Bytes, &file2Bytes)
 
 	return returnSlice, nil

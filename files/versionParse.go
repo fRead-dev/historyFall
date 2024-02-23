@@ -3,6 +3,7 @@ package files
 import (
 	"encoding/base64"
 	"github.com/sergi/go-diff/diffmatchpatch"
+	"go.uber.org/zap"
 	"strconv"
 	"strings"
 )
@@ -10,8 +11,8 @@ import (
 // Обьект точки изменения
 type EditPointObj struct {
 	pos  uint64 //Позиция указателя
-	from string //Начальная строка
-	to   string //Конечная строка
+	from string //Какая была строка\символ
+	to   string //На что заменилась строка\символ
 }
 
 // Трансформация строчного вектора изменений в массив точек изменений
@@ -57,34 +58,81 @@ func (obj historyFallObj) generateStoryVector(newText *[]byte, oldText *[]byte) 
 	var position uint64          //	Позиция по тексту
 
 	position = 0
+	vait := false
+	historyList = EditPointObj{0, "", ""}
 
 	for _, diff := range diffs {
-		if diff.Type != 0 { //только то что претерпело изменений
+		obj.log.Debug(diff.Text, zap.Any("type", diff.Type))
 
-			if diff.Type == -1 {
+		switch diff.Type {
+		case diffmatchpatch.DiffDelete:
+
+			if vait {
+				returnSlice += "" + strconv.FormatUint(historyList.pos, 10) + ":" + base64.StdEncoding.EncodeToString([]byte(historyList.from)) + ":" + base64.StdEncoding.EncodeToString([]byte(historyList.to)) + ";"
+				historyList = EditPointObj{0, "", ""}
+				vait = false
+			}
+
+			historyList.pos = position
+			historyList.from = diff.Text
+			vait = true
+			break
+
+		case diffmatchpatch.DiffInsert:
+
+			if vait {
+				returnSlice += "" + strconv.FormatUint(historyList.pos, 10) + ":" + base64.StdEncoding.EncodeToString([]byte(historyList.from)) + ":" + base64.StdEncoding.EncodeToString([]byte(historyList.to)) + ";"
+				historyList = EditPointObj{0, "", ""}
+				vait = false
+			} else {
+
+			}
+
+			break
+
+		case diffmatchpatch.DiffEqual:
+			break
+
+		}
+
+		if diff.Type != diffmatchpatch.DiffEqual { //только то что претерпело изменений
+
+			if diff.Type == diffmatchpatch.DiffDelete { //Простой захват удаления
+
+				if historyList.pos > 0 { //Обработка если удаление одно за другим
+					returnSlice += "" + strconv.FormatUint(historyList.pos, 10) + ":" + base64.StdEncoding.EncodeToString([]byte(historyList.from)) + ":;"
+					inc = true
+					historyList = EditPointObj{}
+				}
+
 				historyList.pos = position
 				historyList.from = diff.Text
 				historyList.to = ""
 			}
 
-			if diff.Type == 1 {
+			if diff.Type == diffmatchpatch.DiffInsert { //Простой захват добавления
 
-				if historyList.pos == position {
+				if historyList.pos == position { //обработка если это с цепочки замещения
 					historyList.to = diff.Text
 					returnSlice += "" + strconv.FormatUint(historyList.pos, 10) + ":" + base64.StdEncoding.EncodeToString([]byte(historyList.from)) + ":" + base64.StdEncoding.EncodeToString([]byte(historyList.to)) + ";"
 
-				} else {
+				} else { //Обработка если просто добавилось
 					returnSlice += "" + strconv.FormatUint(position, 10) + "::" + base64.StdEncoding.EncodeToString([]byte(diff.Text)) + ";"
 				}
 
-				//Обнуление
 				historyList = EditPointObj{}
 			}
 
+			if historyList.pos > 0 { //	перехват если что то не поймало
+				if diff.Type == diffmatchpatch.DiffEqual {
+					returnSlice += "" + strconv.FormatUint(historyList.pos, 10) + ":" + base64.StdEncoding.EncodeToString([]byte(historyList.from)) + ":" + base64.StdEncoding.EncodeToString([]byte(historyList.to)) + ";"
+					historyList = EditPointObj{}
+				}
+			}
 		}
 
 		//Инкремент только по первому файлу
-		if diff.Type > -1 {
+		if diff.Type == diffmatchpatch.DiffEqual || diff.Type == diffmatchpatch.DiffInsert {
 			position += uint64(len(diff.Text))
 		}
 	}
