@@ -24,7 +24,7 @@ func GO(log *zap.Logger) {
 	comparison, _ := obj.comparison(obj.dir+"text.1", obj.dir+"text.2")
 	obj.log.Info("Полученые расхлжения", zap.String("comparison", comparison))
 
-	//obj.generateOldVersion(comparison, obj.dir+"text.2", obj.dir+"text.oldFile")
+	obj.generateOldVersion(comparison, obj.dir+"text.2", obj.dir+"text.oldFile")
 
 }
 

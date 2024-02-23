@@ -1,11 +1,11 @@
-package system
+package files
 
 import (
 	"crypto/sha1"
 	"encoding/hex"
 )
 
-// перевод строки в строку sha1
+// Получение sha-1 строки из строки
 func SHA1(text string) string {
 	h := sha1.New()
 	h.Write([]byte(text))

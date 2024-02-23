@@ -9,8 +9,38 @@ import (
 
 // Обьект точки изменения
 type EditPointObj struct {
-	pos  uint64 //Позиция указателя
-	text string //На какой текст заменяем
+	pos      uint64 //	Позиция указателя
+	text     string //	Текст изменений
+	isInsert bool   //	Это добавление данных по укащателью
+}
+
+// Генерация валидной исторической точки
+func generateStoryPoint(position uint64, text string, isInsert bool) string {
+	storyPoint := ""
+
+	//	точка обработки
+	storyPoint += strconv.FormatUint(position, 10)
+	storyPoint += ":"
+
+	//	Текст в base64
+	storyPoint += base64.StdEncoding.EncodeToString([]byte(text))
+	storyPoint += ":"
+
+	//	Это добавляется или удаляется
+	if isInsert {
+		storyPoint += "0"
+	} else {
+		storyPoint += "1"
+	}
+
+	//	Контрольная сумма обрезанная до последних 4 символов
+	hash := SHA1(storyPoint)
+	hash = hash[(len(hash) - 4):]
+	storyPoint += "-" + hash
+
+	//	Закрывающий символ
+	storyPoint += ";"
+	return storyPoint
 }
 
 // Трансформация строчного вектора изменений в массив точек изменений
@@ -23,6 +53,8 @@ func (obj historyFallObj) DecodeStoryVector(comparison *string) []EditPointObj {
 	for _, fall := range breakWords { //Перебор точек изменения
 		if len(fall) > 0 {
 			buf := strings.Split(fall, ":")
+
+			//Отсечение если обьект невалидной длинны
 			if len(buf) != 3 {
 				continue
 			}
@@ -63,12 +95,12 @@ func (obj historyFallObj) generateStoryVector(newText *[]byte, oldText *[]byte) 
 
 		//	Удаление данных
 		case diffmatchpatch.DiffDelete:
-			returnSlice += "" + strconv.FormatUint(position, 10) + ":" + base64.StdEncoding.EncodeToString([]byte(diff.Text)) + ":0;"
+			returnSlice += generateStoryPoint(position, diff.Text, false)
 			break
 
 		//	Добавление данных
 		case diffmatchpatch.DiffInsert:
-			returnSlice += "" + strconv.FormatUint(position, 10) + ":" + base64.StdEncoding.EncodeToString([]byte(diff.Text)) + ":1;"
+			returnSlice += generateStoryPoint(position, diff.Text, true)
 			position += uint64(len(diff.Text))
 			break
 
