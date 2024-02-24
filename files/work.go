@@ -93,7 +93,6 @@ func (obj historyFallObj) generateOldVersion(comparison string, defFile string, 
 	if err != nil {
 		return err
 	}
-	defer file.Close()
 
 	scanner := bufio.NewScanner(file) // 	Создаем новый сканер, который будет читать из файла
 	var pos uint32 = 0                //	Координата по истории векторов
@@ -101,34 +100,55 @@ func (obj historyFallObj) generateOldVersion(comparison string, defFile string, 
 	var textRet string = ""           //	Генерируемый текст из вектора
 
 	// Читаем файл построчно
-	for scanner.Scan() {
-		line := scanner.Text()
+	for scanner.Scan() && uint32(len(historyList)) > pos {
+		line := scanner.Bytes()
 
 		var localPos uint64 = 0
 		var lineSize uint64 = uint64(len(line))
 
-		//Пропускаем строку изменения ее не затрагивают
-		for historyList[pos].pos <= (size + lineSize) {
-			localPoint := historyList[pos].pos - size
+		//	Пропускаем строку изменения ее не затрагивают
+		if historyList[pos].pos > (size + lineSize) {
+			textRet += string(line)
+		} else {
 
-			if localPoint > 0 {
-				textRet += string([]byte(line)[localPos:localPoint])
+			//	Перебираем измененную строку
+			for historyList[pos].pos <= (size + lineSize) {
+				localPoint := historyList[pos].pos - size
+
+				//	Добавляем начальные данные если нужно
+				if localPoint > 0 {
+					textRet += string(line[localPos:localPoint])
+				}
+
+				//	обработка добавления\удаления
+				if historyList[pos].isInsert {
+					textRet += historyList[pos].text
+				} else {
+					localPoint += uint64(len(historyList[pos].text))
+				}
+
+				//	Буферизация точки вхождения
+				localPos = localPoint
+
+				//
+				pos++
+				if uint32(len(historyList)) <= pos {
+					break
+				}
 			}
 
-			if historyList[pos].isInsert {
-				textRet += historyList[pos].text
-			} else {
-				localPoint += uint64(len(historyList[pos].text))
+			//	Добавление остатка данных если остались
+			if localPos < lineSize {
+				textRet += string(line[localPos:])
 			}
-
-			localPos = localPoint
-			pos++
 		}
 
 		//	Инкремент общего размера
-		size += lineSize
-		break
+		size += lineSize + 1
+		textRet += "\n"
+		//break
 	}
+	file.Close()
 
 	obj.log.Debug(textRet)
 
@@ -136,27 +156,6 @@ func (obj historyFallObj) generateOldVersion(comparison string, defFile string, 
 	if err := scanner.Err(); err != nil {
 		return err
 	}
-
-	//	FIRST
-	//	SECOND
-
-	//	FIRST в далекой деревне жила маленькая овечка по имени Марго. Марго
-	//	SECOND в далекой деревне жила маленькая овечка по имени Карга. Карга
-
-	//	FIR
-	//	FIRS
-	//	FIRST
-	//	FIRST в далекой деревне жила маленькая овечка по имени
-
-	//2024-02-24T01:35:20+01:00       DEBUG   0       {"text": "FIR", "isInsert": true}
-	//2024-02-24T01:35:20+01:00       DEBUG   1       {"text": "T", "isInsert": true}
-	//2024-02-24T01:35:20+01:00       DEBUG   1       {"text": "ECOND", "isInsert": false}
-	//2024-02-24T01:35:20+01:00       DEBUG   97      {"text": "М", "isInsert": true}
-	//2024-02-24T01:35:20+01:00       DEBUG   97      {"text": "К", "isInsert": false}
-	//2024-02-24T01:35:20+01:00       DEBUG   105     {"text": "о", "isInsert": true}
-	//2024-02-24T01:35:20+01:00       DEBUG   105     {"text": "а", "isInsert": false}
-	//2024-02-24T01:35:20+01:00       DEBUG   109     {"text": "М", "isInsert": true}
-	//2024-02-24T01:35:20+01:00       DEBUG   109     {"text": "К", "isInsert": false}
 	return nil
 }
 
