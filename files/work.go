@@ -27,10 +27,15 @@ func GO(log *zap.Logger) {
 
 	obj.generateOldVersion(comparison, obj.dir+"text.2", obj.dir+"text.oldFile")
 
+	oldFile := SHA256file(obj.dir + "text.1")
+	newFile := SHA256file(obj.dir + "text.2")
+	generateFile := SHA256file(obj.dir + "text.oldFile")
 	log.Info("HASH256",
-		zap.String("OLD", SHA256file(obj.dir+"text.1")),            //	6181ba542b65d80472c30b7f3d1dc1f9e1f316a5dc60ef8c445916e493f3bb00
-		zap.String("NEW", SHA256file(obj.dir+"text.2")),            //	009976b528e73a5be1b0cca16b4f4e7ea5e9941ee24235c520393dc0256bfff6
-		zap.String("Generate", SHA256file(obj.dir+"text.oldFile")), //	6181ba542b65d80472c30b7f3d1dc1f9e1f316a5dc60ef8c445916e493f3bb00
+		zap.Bool(" OLD to Generate", oldFile == generateFile),
+		zap.Bool("NEW to Generate", newFile == generateFile),
+		zap.String("OLD", oldFile),
+		zap.String("NEW", newFile),
+		zap.String("Generate", generateFile),
 	)
 
 }
