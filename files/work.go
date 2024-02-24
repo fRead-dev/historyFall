@@ -112,9 +112,14 @@ func (obj historyFallObj) generateOldVersion(comparison string, defFile string, 
 	var begin bool = true                 //	Трегер начала работы с файлом
 
 	// Читаем файл построчно
-	for scanner.Scan() && uint32(len(historyList)) > pos {
-		line := scanner.Bytes() //	Прочитаная линия из файла
+	for uint32(len(historyList)) > pos {
+		var line []byte         //	Читаемая линия
 		var textRet string = "" //	Генерируемый текст из вектора
+
+		//	Читаем линию если она доступна
+		if scanner.Scan() {
+			line = scanner.Bytes() //	Прочитаная линия из файла
+		}
 
 		var localPos uint64 = 0
 		var lineSize uint64 = uint64(len(line))
