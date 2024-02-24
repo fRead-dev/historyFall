@@ -21,6 +21,12 @@ func GO(log *zap.Logger) {
 	obj.dir = "./files/.history/"
 	obj.log = log
 
+	sql := InitDB(log, obj.dir, "temp name dir")
+	sql.autoCheck()
+	defer sql.Close()
+
+	return
+
 	//получение веткора изменений между файлами
 	comparison, _ := obj.comparison(obj.dir+"text.1", obj.dir+"text.2")
 	obj.log.Info("Полученые расхлжения", zap.String("comparison", comparison))
