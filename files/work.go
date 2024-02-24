@@ -8,11 +8,6 @@ import (
 	"strconv"
 )
 
-type historyFallObj struct {
-	log *zap.Logger
-	dir string
-}
-
 func GO(log *zap.Logger) {
 	log.Info("Work from file")
 
@@ -21,7 +16,7 @@ func GO(log *zap.Logger) {
 	obj.dir = "./files/.history/"
 	obj.log = log
 
-	sql := InitDB(log, obj.dir, "temp name dir")
+	sql := initDB(log, obj.dir, "temp name dir")
 	sql.autoCheck()
 	defer sql.Close()
 
