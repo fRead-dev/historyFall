@@ -12,6 +12,11 @@ import (
 func Init(log *zap.Logger, dir string) HistoryFallObj {
 	log.Warn("Init historyFall " + constVersionHistoryFall)
 
+	//	Получение текущей дериктории если задана слишком короткая
+	if len(dir) < 3 {
+		dir, _ = os.Getwd()
+	}
+
 	// Инициализация обьекта
 	obj := HistoryFallObj{}
 	obj.dir = dir
@@ -27,10 +32,10 @@ func Init(log *zap.Logger, dir string) HistoryFallObj {
 func GO(log *zap.Logger) {
 	log.Info("Work from file")
 
-	obj := Init(log, "./files/.history/")
+	hfObj := Init(log, "./files/.history")
 
-	obj.sql.autoCheck()
-	defer obj.sql.Close()
+	hfObj.sql.autoCheck()
+	defer hfObj.sql.Close()
 
 	return
 
