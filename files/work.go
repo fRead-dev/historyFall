@@ -128,19 +128,11 @@ func (obj historyFallObj) generateOldVersion(comparison string, defFile string, 
 
 			if uint32(len(historyList)) > pos {
 				newLine = append(newLine, []byte(line)[int64(oldPosition):]...)
-				//line = newLine
 			}
 
-			//positionBreak = uint64(len(newLine))
+			obj.log.Debug("TEXT", zap.Any("newLine", string(newLine[:120])), zap.Any("text", historyList[pos].text), zap.Any("pos", historyList[pos].pos))
 
-			//	newLine = append(newLine, []byte(historyList[pos].from)...)
-			//splitPos -= int64(len(historyList[pos].to) - len(historyList[pos].from))
-
-			//	newLine = append(newLine, line[(positionBreak+uint64(len(historyList[pos].to))):]...)
-
-			obj.log.Debug("TEXT", zap.Any("newLine", string(newLine[:120])), zap.Any("size", size))
-
-			line = string(newLine)
+			//line = string(newLine)
 
 			//	инкремент точки изменений
 			pos++
@@ -159,10 +151,23 @@ func (obj historyFallObj) generateOldVersion(comparison string, defFile string, 
 	//	FIRST
 	//	SECOND
 
-	//2024-02-24T01:00:11+01:00       DEBUG   0       {"text": "FIR", "isInsert": true}
-	//2024-02-24T01:00:11+01:00       DEBUG   1       {"text": "T", "isInsert": true}
-	//2024-02-24T01:00:11+01:00       DEBUG   1       {"text": "ECOND", "isInsert": false}
-	//2024-02-24T01:00:11+01:00       DEBUG   97      {"text": "М", "isInsert": true}
+	//	FIRST в далекой деревне жила маленькая овечка по имени Марго. Марго
+	//	SECOND в далекой деревне жила маленькая овечка по имени Карга. Карга
+
+	//	FIR
+	//	FIRS
+	//	FIRST
+	//	FIRST в далекой деревне жила маленькая овечка по имени
+
+	//2024-02-24T01:35:20+01:00       DEBUG   0       {"text": "FIR", "isInsert": true}
+	//2024-02-24T01:35:20+01:00       DEBUG   1       {"text": "T", "isInsert": true}
+	//2024-02-24T01:35:20+01:00       DEBUG   1       {"text": "ECOND", "isInsert": false}
+	//2024-02-24T01:35:20+01:00       DEBUG   97      {"text": "М", "isInsert": true}
+	//2024-02-24T01:35:20+01:00       DEBUG   97      {"text": "К", "isInsert": false}
+	//2024-02-24T01:35:20+01:00       DEBUG   105     {"text": "о", "isInsert": true}
+	//2024-02-24T01:35:20+01:00       DEBUG   105     {"text": "а", "isInsert": false}
+	//2024-02-24T01:35:20+01:00       DEBUG   109     {"text": "М", "isInsert": true}
+	//2024-02-24T01:35:20+01:00       DEBUG   109     {"text": "К", "isInsert": false}
 	return nil
 }
 
