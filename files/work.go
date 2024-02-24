@@ -98,39 +98,49 @@ func (obj historyFallObj) generateOldVersion(comparison string, defFile string, 
 	scanner := bufio.NewScanner(file) // 	Создаем новый сканер, который будет читать из файла
 	var pos uint32 = 0                //	Координата по истории векторов
 	var size uint64 = 0               //	Координата размерности файла
+	var bufPos uint64 = 0
 
 	// Читаем файл построчно
 	for scanner.Scan() {
-		line := scanner.Bytes()
-		var splitPos int64 = 0
+		line := scanner.Text()
+		var positionBreak uint64 = 0
 
-		//Пропускаем строку если там нет изменений
+		//Пропускаем строку изменения ее не затрагивают
 		for historyList[pos].pos <= (size + uint64(len(line))) {
 
-			positionBreak := size
-			if positionBreak > 0 {
-				positionBreak -= historyList[pos].pos
+			//	Смешение только если не совпало с прошлым изменением
+			if bufPos != historyList[pos].pos {
+				positionBreak += historyList[pos].pos //	Перепрыгиваем на точку вмешательства
+				bufPos = historyList[pos].pos
 			} else {
-				positionBreak += historyList[pos].pos
+				obj.log.Info(strconv.Itoa(int(bufPos)))
 			}
 
-			newLine := line[:(int64(positionBreak) + splitPos)]
+			newLine := []byte(line)[:int64(positionBreak)] //	получаем строку до точки вмешательства
+			oldPosition := positionBreak
+
+			if historyList[pos].isInsert { //	если добавление то добавляем символы в точке вмешательства
+				newLine = append(newLine, []byte(historyList[pos].text)...)
+				positionBreak += uint64(len(historyList[pos].text))
+			} else {
+				oldPosition += uint64(len(historyList[pos].text))
+			}
+
+			if uint32(len(historyList)) > pos {
+				newLine = append(newLine, []byte(line)[int64(oldPosition):]...)
+				//line = newLine
+			}
+
+			//positionBreak = uint64(len(newLine))
+
 			//	newLine = append(newLine, []byte(historyList[pos].from)...)
 			//splitPos -= int64(len(historyList[pos].to) - len(historyList[pos].from))
 
 			//	newLine = append(newLine, line[(positionBreak+uint64(len(historyList[pos].to))):]...)
 
-			obj.log.Debug("TEXT", zap.Any("newLine", string(newLine)),
-				zap.Any("size", size),
-				zap.Any("line", len(line)),
-				zap.Any("pos", historyList[pos].pos),
-				//	zap.Any("to", historyList[pos].to),
-				//	zap.Any("from", historyList[pos].from),
-				zap.Any("positionBreak", positionBreak),
-				//	zap.Any("pos.to", uint64(len(historyList[pos].to))),
-			)
+			obj.log.Debug("TEXT", zap.Any("newLine", string(newLine[:120])), zap.Any("size", size))
 
-			line = newLine
+			line = string(newLine)
 
 			//	инкремент точки изменений
 			pos++
@@ -146,6 +156,13 @@ func (obj historyFallObj) generateOldVersion(comparison string, defFile string, 
 		return err
 	}
 
+	//	FIRST
+	//	SECOND
+
+	//2024-02-24T01:00:11+01:00       DEBUG   0       {"text": "FIR", "isInsert": true}
+	//2024-02-24T01:00:11+01:00       DEBUG   1       {"text": "T", "isInsert": true}
+	//2024-02-24T01:00:11+01:00       DEBUG   1       {"text": "ECOND", "isInsert": false}
+	//2024-02-24T01:00:11+01:00       DEBUG   97      {"text": "М", "isInsert": true}
 	return nil
 }
 
