@@ -98,50 +98,39 @@ func (obj historyFallObj) generateOldVersion(comparison string, defFile string, 
 	scanner := bufio.NewScanner(file) // 	Создаем новый сканер, который будет читать из файла
 	var pos uint32 = 0                //	Координата по истории векторов
 	var size uint64 = 0               //	Координата размерности файла
-	var bufPos uint64 = 0
+	var textRet string = ""           //	Генерируемый текст из вектора
 
 	// Читаем файл построчно
 	for scanner.Scan() {
 		line := scanner.Text()
-		var positionBreak uint64 = 0
+
+		var localPos uint64 = 0
+		var lineSize uint64 = uint64(len(line))
 
 		//Пропускаем строку изменения ее не затрагивают
-		for historyList[pos].pos <= (size + uint64(len(line))) {
+		for historyList[pos].pos <= (size + lineSize) {
+			localPoint := historyList[pos].pos - size
 
-			//	Смешение только если не совпало с прошлым изменением
-			if bufPos != historyList[pos].pos {
-				positionBreak += historyList[pos].pos //	Перепрыгиваем на точку вмешательства
-				bufPos = historyList[pos].pos
+			if localPoint > 0 {
+				textRet += string([]byte(line)[localPos:localPoint])
+			}
+
+			if historyList[pos].isInsert {
+				textRet += historyList[pos].text
 			} else {
-				obj.log.Info(strconv.Itoa(int(bufPos)))
+				localPoint += uint64(len(historyList[pos].text))
 			}
 
-			newLine := []byte(line)[:int64(positionBreak)] //	получаем строку до точки вмешательства
-			oldPosition := positionBreak
-
-			if historyList[pos].isInsert { //	если добавление то добавляем символы в точке вмешательства
-				newLine = append(newLine, []byte(historyList[pos].text)...)
-				positionBreak += uint64(len(historyList[pos].text))
-			} else {
-				oldPosition += uint64(len(historyList[pos].text))
-			}
-
-			if uint32(len(historyList)) > pos {
-				newLine = append(newLine, []byte(line)[int64(oldPosition):]...)
-			}
-
-			obj.log.Debug("TEXT", zap.Any("newLine", string(newLine[:120])), zap.Any("text", historyList[pos].text), zap.Any("pos", historyList[pos].pos))
-
-			//line = string(newLine)
-
-			//	инкремент точки изменений
+			localPos = localPoint
 			pos++
 		}
 
 		//	Инкремент общего размера
-		size += uint64(len(line))
+		size += lineSize
 		break
 	}
+
+	obj.log.Debug(textRet)
 
 	//Отсечение если выбило ошибку
 	if err := scanner.Err(); err != nil {
