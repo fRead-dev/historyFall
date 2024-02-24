@@ -1,14 +1,14 @@
-package main
+package files
 
 import (
-	files "historyFall/files"
 	system "historyFall/system"
+	"testing"
 )
 
-func main() {
+func TestAverage(t *testing.T) {
 	log, _ := system.ZapConf.Build() //Инициализация логера
 	defer log.Sync()
-	log.Warn("Start " + system.GlobalName)
+	log.Warn("TEST " + system.GlobalName)
 
-	files.GO(log)
+	GO(log)
 }
