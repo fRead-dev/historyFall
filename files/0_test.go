@@ -1,14 +1,17 @@
 package files
 
 import (
+	"go.uber.org/zap/zaptest"
 	system "historyFall/system"
 	"testing"
 )
 
 func TestAverage(t *testing.T) {
-	log, _ := system.ZapConf.Build() //Инициализация логера
+	log := zaptest.NewLogger(t)
 	defer log.Sync()
 	log.Warn("TEST " + system.GlobalName)
 
-	GO(log)
+	hfObj := Init(log, "__TEST__")
+
+	defer hfObj.sql.Close()
 }

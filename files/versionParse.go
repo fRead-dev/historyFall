@@ -44,7 +44,7 @@ func generateStoryPoint(position uint64, text string, isInsert bool) string {
 }
 
 // Трансформация строчного вектора изменений в массив точек изменений
-func (obj historyFallObj) DecodeStoryVector(comparison *string) []EditPointObj {
+func (obj HistoryFallObj) DecodeStoryVector(comparison *string) []EditPointObj {
 
 	breakWords := strings.Split(*comparison, ";")
 	var historyList []EditPointObj //Массив векторов изменений
@@ -101,7 +101,7 @@ func (obj historyFallObj) DecodeStoryVector(comparison *string) []EditPointObj {
 }
 
 // Получение вектора изменения, сравнивая два текста
-func (obj historyFallObj) generateStoryVector(newText *[]byte, oldText *[]byte) string {
+func (obj HistoryFallObj) generateStoryVector(newText *[]byte, oldText *[]byte) string {
 
 	dmp := diffmatchpatch.New()
 	diffs := dmp.DiffMain(string(*newText), string(*oldText), false)

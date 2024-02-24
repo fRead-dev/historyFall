@@ -14,7 +14,9 @@ var constTablesFromDB = []string{
 	"timeline",
 }
 
-type historyFallObj struct {
+type HistoryFallObj struct {
 	log *zap.Logger
 	dir string
+
+	sql *localSQLiteObj
 }

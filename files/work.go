@@ -5,20 +5,32 @@ import (
 	"go.uber.org/zap"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 )
+
+func Init(log *zap.Logger, dir string) HistoryFallObj {
+	log.Warn("Init historyFall " + constVersionHistoryFall)
+
+	// Инициализация обьекта
+	obj := HistoryFallObj{}
+	obj.dir = dir
+	obj.log = log
+
+	//	Инициализация базы
+	sql := initDB(log, obj.dir, filepath.Base(obj.dir))
+	obj.sql = &sql
+
+	return obj
+}
 
 func GO(log *zap.Logger) {
 	log.Info("Work from file")
 
-	//Инициализация обьекта
-	obj := historyFallObj{}
-	obj.dir = "./files/.history/"
-	obj.log = log
+	obj := Init(log, "./files/.history/")
 
-	sql := initDB(log, obj.dir, "temp name dir")
-	sql.autoCheck()
-	defer sql.Close()
+	obj.sql.autoCheck()
+	defer obj.sql.Close()
 
 	return
 
@@ -42,7 +54,7 @@ func GO(log *zap.Logger) {
 }
 
 // Запись данных в файл
-func (obj historyFallObj) writeFile() {
+func (obj HistoryFallObj) writeFile() {
 	fileName := obj.dir + "output.txt"
 	data := "Пример данных для записи в файл."
 
@@ -65,7 +77,7 @@ func (obj historyFallObj) writeFile() {
 }
 
 // Построчное чтение файла
-func (obj historyFallObj) readFile() {
+func (obj HistoryFallObj) readFile() {
 	// Открываем файл для чтения
 	file, err := os.Open(obj.dir + "text.1")
 	if err != nil {
@@ -91,7 +103,7 @@ func (obj historyFallObj) readFile() {
 }
 
 // Генерация файла более старой версии по сравнению
-func (obj historyFallObj) generateOldVersion(comparison string, defFile string, saveOldFile string) error {
+func (obj HistoryFallObj) generateOldVersion(comparison string, defFile string, saveOldFile string) error {
 
 	//парсим вектор в точки
 	historyList := obj.DecodeStoryVector(&comparison)
@@ -194,7 +206,7 @@ func (obj historyFallObj) generateOldVersion(comparison string, defFile string, 
 }
 
 // сравнение двух файлов
-func (obj historyFallObj) comparison(file1 string, file2 string) (string, error) {
+func (obj HistoryFallObj) comparison(file1 string, file2 string) (string, error) {
 
 	file1Bytes, err := ioutil.ReadFile(file1)
 	if err != nil {

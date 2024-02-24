@@ -72,15 +72,26 @@ type _historyFallTimelineFullObj struct {
 func initDB(log *zap.Logger, dir string, name string) localSQLiteObj {
 	log.Info("Init DB..")
 	obj := localSQLiteObj{}
+	var dbFilePath string = ""
+
 	obj.name = name
 	obj.dir = dir
 	obj.log = log
 
+	//Генерация пути к базе с учетом тестирования
+	if dir == "__TEST__" {
+		dbFilePath = ":memory:"
+	} else {
+		dbFilePath = obj.dir + "/." + ValidFileName(name, 40) + ".hf"
+	}
+	obj.log.Debug("DB", zap.String("path", dbFilePath))
+
 	// Открываем или создаем файл базы данных SQLite
-	db, err := sql.Open("sqlite3", obj.dir+"/."+ValidFileName(name, 40)+".hf")
+	db, err := sql.Open("sqlite3", dbFilePath)
 	if err != nil {
 		obj.log.Panic("Break open DB-sqlite3", zap.Error(err))
 	}
+
 	obj.log.Info("DB connected")
 	obj.db = db
 
