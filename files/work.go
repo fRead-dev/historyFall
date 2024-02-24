@@ -27,6 +27,12 @@ func GO(log *zap.Logger) {
 
 	obj.generateOldVersion(comparison, obj.dir+"text.2", obj.dir+"text.oldFile")
 
+	log.Info("HASH256",
+		zap.String("OLD", SHA256file(obj.dir+"text.1")),            //	6181ba542b65d80472c30b7f3d1dc1f9e1f316a5dc60ef8c445916e493f3bb00
+		zap.String("NEW", SHA256file(obj.dir+"text.2")),            //	009976b528e73a5be1b0cca16b4f4e7ea5e9941ee24235c520393dc0256bfff6
+		zap.String("Generate", SHA256file(obj.dir+"text.oldFile")), //	6181ba542b65d80472c30b7f3d1dc1f9e1f316a5dc60ef8c445916e493f3bb00
+	)
+
 }
 
 // Запись данных в файл
@@ -89,22 +95,36 @@ func (obj historyFallObj) generateOldVersion(comparison string, defFile string, 
 	}
 
 	// Открываем файл для чтения
-	file, err := os.Open(defFile)
+	fileRead, err := os.Open(defFile)
 	if err != nil {
 		return err
 	}
 
-	scanner := bufio.NewScanner(file) // 	Создаем новый сканер, который будет читать из файла
-	var pos uint32 = 0                //	Координата по истории векторов
-	var size uint64 = 0               //	Координата размерности файла
-	var textRet string = ""           //	Генерируемый текст из вектора
+	// Открытие файла для записи		|| флаг os.O_WRONLY|os.O_CREATE|os.O_TRUNC указывает на то, что файл будет создан или перезаписан, если уже существует.
+	fileWrite, err := os.OpenFile(saveOldFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+
+	scanner := bufio.NewScanner(fileRead) // 	Создаем новый сканер, который будет читать из файла
+	var pos uint32 = 0                    //	Координата по истории векторов
+	var size uint64 = 0                   //	Координата размерности файла
+	var begin bool = true                 //	Трегер начала работы с файлом
 
 	// Читаем файл построчно
 	for scanner.Scan() && uint32(len(historyList)) > pos {
-		line := scanner.Bytes()
+		line := scanner.Bytes() //	Прочитаная линия из файла
+		var textRet string = "" //	Генерируемый текст из вектора
 
 		var localPos uint64 = 0
 		var lineSize uint64 = uint64(len(line))
+
+		//	Обработка начала строки для разделителей в файле
+		if begin {
+			begin = false
+		} else {
+			textRet += "\n"
+		}
 
 		//	Пропускаем строку изменения ее не затрагивают
 		if historyList[pos].pos > (size + lineSize) {
@@ -145,17 +165,20 @@ func (obj historyFallObj) generateOldVersion(comparison string, defFile string, 
 
 		//	Инкремент общего размера
 		size += lineSize + 1
-		textRet += "\n"
-		//break
-	}
-	file.Close()
 
-	obj.log.Debug(textRet)
+		//	Вносим собраную строку в файл
+		fileWrite.WriteString(textRet)
+	}
+
+	//	Закрытие работы с файлами
+	fileRead.Close()
+	fileWrite.Close()
 
 	//Отсечение если выбило ошибку
 	if err := scanner.Err(); err != nil {
 		return err
 	}
+
 	return nil
 }
 
