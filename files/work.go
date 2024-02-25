@@ -9,6 +9,7 @@ import (
 	"strconv"
 )
 
+// Инициализация класса работы с historyFall
 func Init(log *zap.Logger, dir string) HistoryFallObj {
 	log.Warn("Init historyFall " + constVersionHistoryFall)
 
@@ -29,6 +30,7 @@ func Init(log *zap.Logger, dir string) HistoryFallObj {
 	return obj
 }
 
+// todo Временный метод для отдладки
 func GO(log *zap.Logger) {
 	log.Info("Work from file")
 
@@ -40,14 +42,14 @@ func GO(log *zap.Logger) {
 	return
 
 	//получение веткора изменений между файлами
-	comparison, _ := obj.comparison(obj.dir+"text.1", obj.dir+"text.2")
-	obj.log.Info("Полученые расхлжения", zap.String("comparison", comparison))
+	comparison, _ := hfObj.comparison(hfObj.dir+"text.1", hfObj.dir+"text.2")
+	hfObj.log.Info("Полученые расхлжения", zap.String("comparison", comparison))
 
-	obj.generateOldVersion(comparison, obj.dir+"text.2", obj.dir+"text.oldFile")
+	hfObj.generateOldVersion(comparison, hfObj.dir+"text.2", hfObj.dir+"text.oldFile")
 
-	oldFile := SHA256file(obj.dir + "text.1")
-	newFile := SHA256file(obj.dir + "text.2")
-	generateFile := SHA256file(obj.dir + "text.oldFile")
+	oldFile := SHA256file(hfObj.dir + "text.1")
+	newFile := SHA256file(hfObj.dir + "text.2")
+	generateFile := SHA256file(hfObj.dir + "text.oldFile")
 	log.Info("HASH256",
 		zap.Bool(" OLD to Generate", oldFile == generateFile),
 		zap.Bool("NEW to Generate", newFile == generateFile),

@@ -14,6 +14,10 @@ import (
 
 // Получение sha-1 строки из строки
 func SHA1(text string) string {
+	if len(text) == 0 {
+		return ""
+	}
+
 	h := sha1.New()
 	h.Write([]byte(text))
 	return hex.EncodeToString(h.Sum(nil))
