@@ -24,6 +24,10 @@ func tempTest(log *zap.Logger) {
 	hfObj := module.Init(log, dir)
 	defer hfObj.Close()
 
+	module.IsValidFileType("text.fg", []string{"fg", "gh"})
+
+	return
+
 	//получение веткора изменений между файлами
 	comparison, _ := hfObj.Comparison(dir+"text_1.txt", dir+"text_2.txt")
 	log.Info("Полученые расхлжения", zap.String("comparison", comparison))
