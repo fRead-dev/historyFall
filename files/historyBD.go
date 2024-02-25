@@ -322,7 +322,9 @@ func (obj localSQLiteObj) searchSHA(key string) (uint32, bool) {
 
 	err := obj.db.QueryRow("SELECT `id` FROM `sha` WHERE `key` = ?", key).Scan(&id)
 	if err != nil {
-		obj.log.Error("DB", zap.String("func", "searchSHA"), zap.Error(err))
+		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением
+			obj.log.Error("DB", zap.String("func", "searchSHA"), zap.Error(err))
+		}
 
 		id = 0
 		status = false
@@ -338,7 +340,9 @@ func (obj localSQLiteObj) getSHA(id uint32) (string, bool) {
 
 	err := obj.db.QueryRow("SELECT `key` FROM `sha` WHERE `id` = ?", id).Scan(&key)
 	if err != nil {
-		obj.log.Error("DB", zap.String("func", "getSHA"), zap.Error(err))
+		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
+			obj.log.Error("DB", zap.String("func", "getSHA"), zap.Error(err))
+		}
 
 		key = ""
 		status = false
@@ -389,7 +393,9 @@ func (obj localSQLiteObj) searchFile(fileName string) (_historyFallFileObj, bool
 	)
 
 	if err != nil {
-		obj.log.Error("DB", zap.String("func", "searchFile"), zap.Error(err))
+		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением
+			obj.log.Error("DB", zap.String("func", "searchFile"), zap.Error(err))
+		}
 		status = false
 	}
 
@@ -409,7 +415,9 @@ func (obj localSQLiteObj) getFile(id uint32) (_historyFallFileObj, bool) {
 	)
 
 	if err != nil {
-		obj.log.Error("DB", zap.String("func", "searchFile"), zap.Error(err))
+		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением
+			obj.log.Error("DB", zap.String("func", "searchFile"), zap.Error(err))
+		}
 		status = false
 	}
 

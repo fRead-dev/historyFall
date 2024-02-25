@@ -5,6 +5,7 @@ import (
 	"go.uber.org/zap/zaptest"
 	"historyFall/system"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/bxcodec/faker/v3"
@@ -60,6 +61,16 @@ func TestCrypt(t *testing.T) {
 
 type testObj struct {
 	HistoryFallObj
+	t *testing.T
+}
+
+// Простой обработчик по условию
+func (obj testObj) testPoint(status bool, text string) {
+	if status {
+		obj.log.DPanic("Invalid: " + text)
+	} else {
+		obj.log.Debug("Valid: " + text)
+	}
 }
 
 /*	Тест на класс historyFall	*/
@@ -67,10 +78,36 @@ func TestHistoryFall(t *testing.T) {
 	log := zaptest.NewLogger(t)
 	log.Warn("TEST " + system.GlobalName)
 
-	obj := testObj{Init(log, "__TEST__")}
+	obj := testObj{Init(log, "__TEST__"), t}
 	defer obj.sql.Close()
+
+	obj.sql.autoCheck()
+
+	obj.databaseSHA()
 }
 
-func (obj testObj) TestFirst() {
-	obj.log.Info("jjjjj")
+func (obj testObj) databaseSHA() {
+	hashWord := SHA1(faker.Word())
+	hashName := SHA1(faker.Name())
+	hashParagraph := SHA1(faker.Paragraph())
+
+	hashWordID := obj.sql.addSHA(hashWord)
+	hashNameID := obj.sql.addSHA(hashName)
+	hashParagraphID := obj.sql.addSHA(hashParagraph)
+
+	obj.log.Info("Add SHA",
+		zap.Any("hashWord", []string{strconv.Itoa(int(hashWordID)), hashWord}),
+		zap.Any("hashName", []string{strconv.Itoa(int(hashNameID)), hashName}),
+		zap.Any("hashParagraph", []string{strconv.Itoa(int(hashParagraphID)), hashParagraph}),
+	)
+
+	//	Проверка на отсутствие дубликатов
+	dublicate := obj.sql.addSHA(hashWord)
+	obj.testPoint(dublicate != hashWordID, "Duplicate")
+
+	//	Проверка на NULL
+	idNull, statusNull := obj.sql.searchSHA(SHA1(faker.Paragraph()))
+	obj.testPoint(idNull != 0, "idNull")
+	obj.testPoint(statusNull, "statusNull")
+
 }
