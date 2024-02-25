@@ -38,7 +38,7 @@ func tempTest(log *zap.Logger) {
 	log.Info("MatchingBitsInHash",
 		zap.Any("old > new", module.MatchBetweenFiles(dir+"text_2.txt", dir+"text_1.txt")),
 		zap.Any("old > new", module.MatchBetweenFiles(dir+"text_2.txt", dir+"text_2.txt")),
-		zap.Any("old > tp", module.MatchBetweenFiles(dir+"._temp.hf", dir+"text_1.txt")),
+		zap.Any("old > tp", module.MatchBetweenFiles("index.go", dir+"text_1.txt")),
 	)
 
 	return

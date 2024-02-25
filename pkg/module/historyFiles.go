@@ -121,11 +121,17 @@ func (obj HistoryFallObj) LoadTextInFile(fileName string, singleRegister bool, f
 					break
 
 				case 2:
-					continue
+					if unicode.IsUpper(run) {
+						continue
+					} else {
+						pos = 0
+					}
 
 				case 3:
 					pos = 0
-					continue
+					if unicode.IsUpper(run) {
+						continue
+					}
 				}
 			}
 
@@ -193,11 +199,17 @@ func LoadTextInFile(filePath string, singleRegister bool, fReadMarkup bool) stri
 					break
 
 				case 2:
-					continue
+					if unicode.Is(unicode.Latin, run) && unicode.IsUpper(run) {
+						continue
+					} else {
+						pos = 0
+					}
 
 				case 3:
 					pos = 0
-					continue
+					if unicode.Is(unicode.Latin, run) && unicode.IsUpper(run) {
+						continue
+					}
 				}
 			}
 
