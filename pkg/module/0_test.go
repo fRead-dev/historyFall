@@ -137,6 +137,16 @@ func (obj testObj) databaseSHA() {
 
 }
 func (obj testObj) databaseFile() {
+	type testFileObj struct {
+		value string
+
+		dbID uint32
+		info os.FileInfo
+		hash string
+	}
+	var filesArr [5]testFileObj
+
+	//	Массив файлов для теста
 	var valuesParam = []string{
 		"fileName10x:10",
 		"fileName10y:10",
@@ -144,31 +154,38 @@ func (obj testObj) databaseFile() {
 		"fileName100:100",
 		"fileName1000:1000",
 	}
-	var valuesName []string
-	var filesHash []string
-	var filesInfo []os.FileInfo
 
 	//	Генерация файлов
-	for _, tempValue := range valuesParam {
+	for pos, tempValue := range valuesParam {
 		buf := strings.Split(tempValue, ":")
 		size, _ := strconv.ParseUint(buf[1], 10, 16)
 
 		fileName := generateFile(uint16(size))
+		fileObj := testFileObj{}
+
+		fileObj.value = buf[0]
+		fileObj.hash = SHA256file(fileName)
+		fileObj.info, _ = os.Stat(fileName)
+		fileObj.dbID = obj.sql.addFile(fileName, 0)
+
+		filesArr[pos] = fileObj
 		defer os.Remove(fileName)
 
-		valuesName := append(valuesName, buf[0])
-		filesHash := append(filesHash, SHA256file(fileName))
-
-		filesInfoBuf, _ := os.Stat(fileName)
-		filesInfo := append(filesInfo, filesInfoBuf)
-
-		obj.log.Info("Create File "+valuesName[len(valuesName)-1],
-			zap.Any("size", filesInfo[len(filesInfo)-1].Size()),
-			zap.Any("name", filesInfo[len(filesInfo)-1].Name()),
-			zap.Any("mode", filesInfo[len(filesInfo)-1].Mode()),
-			zap.Any("hash", filesHash[len(filesHash)-1]),
+		obj.log.Info("Create File "+fileObj.value,
+			zap.Any("ID", fileObj.dbID),
+			zap.Any("size", fileObj.info.Size()),
+			zap.Any("name", fileObj.info.Name()),
+			zap.Any("mode", fileObj.info.Mode()),
+			zap.Any("hash", fileObj.hash),
 		)
 	}
 
 	/**/
+
+	//	Проверка на поиск по названию файла
+	for _, fileObj := range filesArr {
+		retFileObj, retFileStatus := obj.sql.searchFile(fileObj.info.Name())
+		obj.testPoint(retFileObj.id != fileObj.dbID, "searchFile ["+fileObj.value+"] obj")
+		obj.testPoint(!retFileStatus, "searchFile ["+fileObj.value+"] status")
+	}
 }
