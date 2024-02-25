@@ -161,7 +161,7 @@ func (obj localSQLiteObj) optimizationDB() {
 func (obj localSQLiteObj) getVersion() string {
 	var version string
 
-	err := obj.db.QueryRow("SELECT `name` FROM `info` WHERE `name`='ver'").Scan(&version)
+	err := obj.db.QueryRow("SELECT `data` FROM `info` WHERE `name`='ver'").Scan(&version)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
 			obj.log.Error("DB", zap.String("func", "getVersion"), zap.Error(err))
@@ -174,7 +174,7 @@ func (obj localSQLiteObj) getVersion() string {
 func (obj localSQLiteObj) getExtensions() []string {
 	var extensions string
 
-	err := obj.db.QueryRow("SELECT `name` FROM `info` WHERE `name`='extensions'").Scan(&extensions)
+	err := obj.db.QueryRow("SELECT `data` FROM `info` WHERE `name`='extensions'").Scan(&extensions)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
 			obj.log.Error("DB", zap.String("func", "getVersion"), zap.Error(err))
@@ -425,7 +425,7 @@ func (obj localSQLiteObj) searchFile(fileName string) (_historyFallFileObj, bool
 
 	//	Отсечение если недопустимое расширение файла
 	if !IsValidFileType(fileName, obj.fileExtensions) {
-		obj.log.Error("Invalid fileType", zap.String("func", "searchFile"))
+		obj.log.Error("Invalid fileType", zap.String("func", "searchFile"), zap.String("name", fileName))
 		return file, false
 	}
 
@@ -484,14 +484,15 @@ func (obj localSQLiteObj) updFile(id uint32, beginID uint32, isDel bool) {
 
 // Добавление нового файла
 func (obj localSQLiteObj) addFile(name string, beginID uint32) uint32 {
-	if !FileExist(obj.dir, name) { //	Проверка на физическое наличие данного файла в директории
-		obj.log.Error("File not found", zap.String("func", "addFile"), zap.String("func", name))
-		return 0
-	}
 
 	//	Отсечение если недопустимое расширение файла
 	if !IsValidFileType(name, obj.fileExtensions) {
-		obj.log.Error("Invalid fileType", zap.String("func", "addFile"))
+		obj.log.Error("Invalid fileType", zap.String("func", "addFile"), zap.String("name", name))
+		return 0
+	}
+
+	if !FileExist(obj.dir, name) { //	Проверка на физическое наличие данного файла в директории
+		obj.log.Error("File not found", zap.String("func", "addFile"), zap.String("name", name))
 		return 0
 	}
 
