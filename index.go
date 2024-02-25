@@ -17,12 +17,10 @@ func main() {
 // todo Временный метод для отдладки
 func GO(log *zap.Logger) {
 	log.Info("Work from file")
-	dir := "./pkg/_temp"
+	dir := "./pkg/_temp/"
 
 	hfObj := module.Init(log, dir)
 	defer hfObj.Close()
-
-	return
 
 	//получение веткора изменений между файлами
 	comparison, _ := hfObj.Comparison(dir+"text.1", dir+"text.2")
