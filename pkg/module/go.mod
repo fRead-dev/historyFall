@@ -1,4 +1,4 @@
-module github.com/fRead-dev/historyFall/module
+module github.com/fRead-dev/historyFall/pkg/module
 
 go 1.21
 
