@@ -53,23 +53,29 @@ func MachDiff(firstText *string, secondText *string) uint16 {
 	diffs := dmp.DiffMain(*firstText, *secondText, false)
 
 	// Вычисляем общее количество символов в обоих файлах
-	totalChars := 0
+	totalChars := uint64(0)
 	for _, diff := range diffs {
-		totalChars += len(diff.Text)
+		totalChars += uint64(len(diff.Text))
 	}
 
 	// Вычисляем количество общих символов
-	sharedChars := 0
+	sharedChars := uint64(0)
 	for _, diff := range diffs {
 		if diff.Type == diffmatchpatch.DiffEqual {
-			sharedChars += len(diff.Text)
+			sharedChars += uint64(len(diff.Text))
 		}
+	}
+
+	//	Увеличение счетчика для слишком маленьких файлов
+	if sharedChars < 1000 || totalChars < 1000 {
+		sharedChars *= 1000
+		totalChars *= 1000
 	}
 
 	// Вычисляем степень сходства как отношение общих символов к общему количеству символов
 	if totalChars > 0 {
-		rez := float64(sharedChars) / float64(totalChars)
-		return uint16(rez * 1000)
+		buf := float64(sharedChars) / float64(totalChars)
+		return uint16(buf * 1000)
 	}
 
 	return 0
