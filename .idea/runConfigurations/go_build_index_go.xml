@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="go build index.go" type="GoApplicationRunConfiguration" factoryName="Go Application" nameIsGenerated="true">
+    <output_file path="$PROJECT_DIR$/build_run.log" is_save="true" />
+    <module name="historyFall" />
+    <working_directory value="$PROJECT_DIR$" />
+    <kind value="FILE" />
+    <package value="historyFall" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$/index.go" />
+    <method v="2" />
+  </configuration>
+</component>

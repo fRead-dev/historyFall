@@ -36,38 +36,15 @@ func AutoInit(dir string) HistoryFallObj {
 	return Init(log, dir)
 }
 
-// todo Временный метод для отдладки
-func GO(log *zap.Logger) {
-	log.Info("Work from file")
-
-	hfObj := Init(log, "./pkg/.history")
-
-	hfObj.sql.autoCheck()
-	defer hfObj.sql.Close()
-
-	return
-
-	//получение веткора изменений между файлами
-	comparison, _ := hfObj.comparison(hfObj.dir+"text.1", hfObj.dir+"text.2")
-	hfObj.log.Info("Полученые расхлжения", zap.String("comparison", comparison))
-
-	hfObj.generateOldVersion(comparison, hfObj.dir+"text.2", hfObj.dir+"text.oldFile")
-
-	oldFile := SHA256file(hfObj.dir + "text.1")
-	newFile := SHA256file(hfObj.dir + "text.2")
-	generateFile := SHA256file(hfObj.dir + "text.oldFile")
-	log.Info("HASH256",
-		zap.Bool(" OLD to Generate", oldFile == generateFile),
-		zap.Bool("NEW to Generate", newFile == generateFile),
-		zap.String("OLD", oldFile),
-		zap.String("NEW", newFile),
-		zap.String("Generate", generateFile),
-	)
-
+// Закрытие всех необходимых вещей
+func (obj HistoryFallObj) Close() {
+	obj.sql.Close()
 }
 
+//	#####################################################################################	//
+
 // Запись данных в файл
-func (obj HistoryFallObj) writeFile() {
+func (obj HistoryFallObj) WriteFile() {
 	fileName := obj.dir + "output.txt"
 	data := "Пример данных для записи в файл."
 
@@ -90,9 +67,9 @@ func (obj HistoryFallObj) writeFile() {
 }
 
 // Построчное чтение файла
-func (obj HistoryFallObj) readFile() {
+func (obj HistoryFallObj) ReadFile() {
 	// Открываем файл для чтения
-	file, err := os.Open(obj.dir + "text.1")
+	file, err := os.Open(obj.dir + "text_1.txt")
 	if err != nil {
 		obj.log.Error("Ошибка открытия файла", zap.Error(err))
 		return
@@ -116,7 +93,7 @@ func (obj HistoryFallObj) readFile() {
 }
 
 // Генерация файла более старой версии по сравнению
-func (obj HistoryFallObj) generateOldVersion(comparison string, defFile string, saveOldFile string) error {
+func (obj HistoryFallObj) GenerateOldVersion(comparison string, defFile string, saveOldFile string) error {
 
 	//парсим вектор в точки
 	historyList := obj.DecodeStoryVector(&comparison)
@@ -219,7 +196,7 @@ func (obj HistoryFallObj) generateOldVersion(comparison string, defFile string, 
 }
 
 // сравнение двух файлов
-func (obj HistoryFallObj) comparison(file1 string, file2 string) (string, error) {
+func (obj HistoryFallObj) Comparison(file1 string, file2 string) (string, error) {
 
 	file1Bytes, err := ioutil.ReadFile(file1)
 	if err != nil {
