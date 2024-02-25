@@ -35,10 +35,16 @@ func tempTest(log *zap.Logger) {
 	oldFile := module.SHA256file(dir + "text_1.txt")
 	newFile := module.SHA256file(dir + "text_2.txt")
 
-	log.Info("MatchingBitsInHash",
+	log.Info("MatchBetweenFiles",
 		zap.Any("old > new", module.MatchBetweenFiles(dir+"text_2.txt", dir+"text_1.txt")),
-		zap.Any("old > new", module.MatchBetweenFiles(dir+"text_2.txt", dir+"text_2.txt")),
+		zap.Any("new > new", module.MatchBetweenFiles(dir+"text_2.txt", dir+"text_2.txt")),
 		zap.Any("old > tp", module.MatchBetweenFiles("index.go", dir+"text_1.txt")),
+	)
+
+	log.Info("MatchBetweenFilesHashArr",
+		zap.Any("old > new", module.MatchBetweenFilesHashArr(dir+"text_2.txt", dir+"text_1.txt")),
+		zap.Any("new > new", module.MatchBetweenFilesHashArr(dir+"text_2.txt", dir+"text_2.txt")),
+		zap.Any("old > tp", module.MatchBetweenFilesHashArr("index.go", dir+"text_1.txt")),
 	)
 
 	return
