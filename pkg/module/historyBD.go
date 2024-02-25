@@ -423,6 +423,12 @@ func (obj localSQLiteObj) searchFile(fileName string) (_historyFallFileObj, bool
 	file := _historyFallFileObj{}
 	status := true
 
+	//	Отсечение если недопустимое расширение файла
+	if !IsValidFileType(fileName, obj.fileExtensions) {
+		obj.log.Error("Invalid fileType", zap.String("func", "searchFile"))
+		return file, false
+	}
+
 	err := obj.db.QueryRow("SELECT `id`, `key`, `isDel`, `beginID` FROM `pkg` WHERE `key` = ?", fileName).Scan(
 		&file.id,
 		&file.key,
@@ -480,6 +486,12 @@ func (obj localSQLiteObj) updFile(id uint32, beginID uint32, isDel bool) {
 func (obj localSQLiteObj) addFile(name string, beginID uint32) uint32 {
 	if !FileExist(obj.dir, name) { //	Проверка на физическое наличие данного файла в директории
 		obj.log.Error("File not found", zap.String("func", "addFile"), zap.String("func", name))
+		return 0
+	}
+
+	//	Отсечение если недопустимое расширение файла
+	if !IsValidFileType(name, obj.fileExtensions) {
+		obj.log.Error("Invalid fileType", zap.String("func", "addFile"))
 		return 0
 	}
 
