@@ -40,7 +40,7 @@ func AutoInit(dir string) HistoryFallObj {
 func GO(log *zap.Logger) {
 	log.Info("Work from file")
 
-	hfObj := Init(log, "./module/.history")
+	hfObj := Init(log, "./pkg/.history")
 
 	hfObj.sql.autoCheck()
 	defer hfObj.sql.Close()

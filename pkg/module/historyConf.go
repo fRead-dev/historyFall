@@ -6,7 +6,7 @@ import "go.uber.org/zap"
 var constTablesFromDB = []string{
 	"info",
 	"sha",
-	"module",
+	"pkg",
 	"vectors",
 	"timeline",
 }
