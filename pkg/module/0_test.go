@@ -5,6 +5,7 @@ import (
 	"go.uber.org/zap/zaptest"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/bxcodec/faker/v3"
@@ -86,6 +87,7 @@ func TestHistoryFall(t *testing.T) {
 	obj.sql.autoCheck()
 
 	obj.databaseSHA()
+	obj.databaseFile()
 }
 
 func (obj testObj) databaseSHA() {
@@ -133,4 +135,40 @@ func (obj testObj) databaseSHA() {
 	obj.testPoint(SHAgetNullHash != "", "SHAgetNullHash")
 	obj.testPoint(SHAgetNullStatus, "SHAgetNullStatus")
 
+}
+func (obj testObj) databaseFile() {
+	var valuesParam = []string{
+		"fileName10x:10",
+		"fileName10y:10",
+		"fileName10z:10",
+		"fileName100:100",
+		"fileName1000:1000",
+	}
+	var valuesName []string
+	var filesHash []string
+	var filesInfo []os.FileInfo
+
+	//	Генерация файлов
+	for _, tempValue := range valuesParam {
+		buf := strings.Split(tempValue, ":")
+		size, _ := strconv.ParseUint(buf[1], 10, 16)
+
+		fileName := generateFile(uint16(size))
+		defer os.Remove(fileName)
+
+		valuesName := append(valuesName, buf[0])
+		filesHash := append(filesHash, SHA256file(fileName))
+
+		filesInfoBuf, _ := os.Stat(fileName)
+		filesInfo := append(filesInfo, filesInfoBuf)
+
+		obj.log.Info("Create File "+valuesName[len(valuesName)-1],
+			zap.Any("size", filesInfo[len(filesInfo)-1].Size()),
+			zap.Any("name", filesInfo[len(filesInfo)-1].Name()),
+			zap.Any("mode", filesInfo[len(filesInfo)-1].Mode()),
+			zap.Any("hash", filesHash[len(filesHash)-1]),
+		)
+	}
+
+	/**/
 }
