@@ -1,4 +1,4 @@
-package files
+package module
 
 import "go.uber.org/zap"
 
@@ -9,7 +9,7 @@ const constVersionHistoryFall string = "1.0"
 var constTablesFromDB = []string{
 	"info",
 	"sha",
-	"files",
+	"module",
 	"vectors",
 	"timeline",
 }

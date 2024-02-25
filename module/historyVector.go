@@ -1,4 +1,4 @@
-package files
+package module
 
 import (
 	"encoding/base64"

@@ -1,4 +1,4 @@
-package files
+package module
 
 import (
 	"go.uber.org/zap"
@@ -73,6 +73,8 @@ func (obj testObj) testPoint(status bool, text string) {
 		obj.log.Debug("Valid: " + text)
 	}
 }
+
+//*//
 
 /*	Тест на класс historyFall	*/
 func TestHistoryFall(t *testing.T) {

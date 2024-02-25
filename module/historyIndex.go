@@ -1,4 +1,4 @@
-package files
+package module
 
 import (
 	"bufio"
@@ -30,11 +30,17 @@ func Init(log *zap.Logger, dir string) HistoryFallObj {
 	return obj
 }
 
+// Инициализация класса historyFall с автоматическим запуском логов
+func AutoInit(dir string) HistoryFallObj {
+	log, _ := zap.NewProduction()
+	return Init(log, dir)
+}
+
 // todo Временный метод для отдладки
 func GO(log *zap.Logger) {
 	log.Info("Work from file")
 
-	hfObj := Init(log, "./files/.history")
+	hfObj := Init(log, "./module/.history")
 
 	hfObj.sql.autoCheck()
 	defer hfObj.sql.Close()

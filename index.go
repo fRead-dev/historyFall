@@ -1,8 +1,8 @@
 package main
 
 import (
-	files "historyFall/files"
-	system "historyFall/system"
+	"historyFall/module"
+	"historyFall/system"
 )
 
 func main() {
@@ -10,5 +10,5 @@ func main() {
 	defer log.Sync()
 	log.Warn("Start " + system.GlobalName)
 
-	files.GO(log)
+	module.GO(log)
 }

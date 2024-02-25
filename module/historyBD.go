@@ -1,4 +1,4 @@
-package files
+package module
 
 import (
 	"database/sql"
@@ -245,7 +245,7 @@ func (obj localSQLiteObj) initTables() {
 	`)
 
 	obj.createTable(`
-		CREATE TABLE IF NOT EXISTS files (
+		CREATE TABLE IF NOT EXISTS module (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             key TEXT NOT NULL,
             isDel BOOLEAN NOT NULL,
@@ -261,7 +261,7 @@ func (obj localSQLiteObj) initTables() {
 			fileID INTEGER,
 			vectorID INTEGER,
 			time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			CONSTRAINT timeline_fileID FOREIGN KEY(fileID) REFERENCES files(id),
+			CONSTRAINT timeline_fileID FOREIGN KEY(fileID) REFERENCES module(id),
 		    CONSTRAINT timeline_vectorID FOREIGN KEY(vectorID) REFERENCES vectors(id)
 		)
 	`)
@@ -294,7 +294,7 @@ func (obj localSQLiteObj) initValues() {
 	//Установка нулевых значений для таблицы
 	obj.ExecTransaction(tx, "INSERT INTO `sha` (`id`, `key`) VALUES (0, 'NULL')")
 	obj.ExecTransaction(tx, "INSERT INTO `vectors` (`id`, `key`, `oldID`, `newID`) VALUES (0, 'NULL', 0, 0)")
-	obj.ExecTransaction(tx, "INSERT INTO `files` (`id`, `key`, `isDel`, `beginID`) VALUES (0, 'NULL', true, 0)")
+	obj.ExecTransaction(tx, "INSERT INTO `module` (`id`, `key`, `isDel`, `beginID`) VALUES (0, 'NULL', true, 0)")
 
 	// Фиксация (коммит) транзакции
 	obj.EndTransaction(tx, "initValues")
@@ -385,7 +385,7 @@ func (obj localSQLiteObj) searchFile(fileName string) (_historyFallFileObj, bool
 	file := _historyFallFileObj{}
 	status := true
 
-	err := obj.db.QueryRow("SELECT `id`, `key`, `isDel`, `beginID` FROM `files` WHERE `key` = ?", fileName).Scan(
+	err := obj.db.QueryRow("SELECT `id`, `key`, `isDel`, `beginID` FROM `module` WHERE `key` = ?", fileName).Scan(
 		&file.id,
 		&file.key,
 		&file.isDel,
@@ -407,7 +407,7 @@ func (obj localSQLiteObj) getFile(id uint32) (_historyFallFileObj, bool) {
 	file := _historyFallFileObj{}
 	status := true
 
-	err := obj.db.QueryRow("SELECT `id`, `key`, `isDel`, `beginID` FROM `files` WHERE `id` = ?", id).Scan(
+	err := obj.db.QueryRow("SELECT `id`, `key`, `isDel`, `beginID` FROM `module` WHERE `id` = ?", id).Scan(
 		&file.id,
 		&file.key,
 		&file.isDel,
@@ -429,7 +429,7 @@ func (obj localSQLiteObj) updFile(id uint32, beginID uint32, isDel bool) {
 	tx := obj.BeginTransaction("updFile")
 	obj.tapActivityTransaction(tx)
 
-	_, err := tx.Exec("UPDATE `files` SET `isDel` = ?, `beginID` = ? WHERE `id` = ?;", isDel, beginID, id)
+	_, err := tx.Exec("UPDATE `module` SET `isDel` = ?, `beginID` = ? WHERE `id` = ?;", isDel, beginID, id)
 	if err != nil {
 		tx.Rollback()
 		obj.log.Error("Break transaction", zap.String("func", "updFile"), zap.Error(err))
@@ -454,7 +454,7 @@ func (obj localSQLiteObj) addFile(name string, beginID uint32) uint32 {
 	tx := obj.BeginTransaction("addFile")
 	obj.tapActivityTransaction(tx)
 
-	result, err := tx.Exec("INSERT INTO `files` (`key`, `isDel`, `beginID`) VALUES (?, true, ?)", name, beginID)
+	result, err := tx.Exec("INSERT INTO `module` (`key`, `isDel`, `beginID`) VALUES (?, true, ?)", name, beginID)
 	if err != nil {
 		tx.Rollback()
 		obj.log.Error("Break transaction", zap.String("func", "addFile"), zap.Error(err))
@@ -474,7 +474,7 @@ func (obj localSQLiteObj) setDelFile(id uint32, isDelete bool) {
 	tx := obj.BeginTransaction("setDelFile")
 	obj.tapActivityTransaction(tx)
 
-	_, err := tx.Exec("UPDATE `files` SET `isDel` = ? WHERE `id` = ?;", isDelete, id)
+	_, err := tx.Exec("UPDATE `module` SET `isDel` = ? WHERE `id` = ?;", isDelete, id)
 	if err != nil {
 		tx.Rollback()
 		obj.log.Error("Break transaction", zap.String("func", "setDelFile"), zap.Error(err))
