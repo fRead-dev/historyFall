@@ -69,7 +69,7 @@ func (obj HistoryFallObj) WriteFile() {
 // Построчное чтение файла
 func (obj HistoryFallObj) ReadFile() {
 	// Открываем файл для чтения
-	file, err := os.Open(obj.dir + "text.1")
+	file, err := os.Open(obj.dir + "text_1.txt")
 	if err != nil {
 		obj.log.Error("Ошибка открытия файла", zap.Error(err))
 		return
