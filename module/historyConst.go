@@ -1,4 +1,4 @@
 package module
 
-// Сквозная версия. Небходимо для согласования в будущем
-const constVersionHistoryFall string = "1.0"
+const constVersionHistoryFall string = "1.0.06fa47c8"
+const constDateUpdateHistoryFall = ""
