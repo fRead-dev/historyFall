@@ -18,7 +18,7 @@ echo "$NAME [$VERSION.$HASH]" ': ' $(cat "$1") > "$1"
 echo "package module" > "$fileConst"
 echo "" >> "$fileConst"
 echo "const constVersionHistoryFall string = \"$VERSION.$HASH\"" >> "$fileConst"
-echo "const constDateUpdateHistoryFall = \"$dateNow\"" >> "$fileConst"
+echo "const constDateUpdateHistoryFall string = \"$dateNow\"" >> "$fileConst"
 
 exit 0
 

@@ -25,13 +25,13 @@ func tempTest(log *zap.Logger) {
 	defer hfObj.Close()
 
 	//получение веткора изменений между файлами
-	comparison, _ := hfObj.Comparison(dir+"text.1", dir+"text.2")
+	comparison, _ := hfObj.Comparison(dir+"text_1.txt", dir+"text_2.txt")
 	log.Info("Полученые расхлжения", zap.String("comparison", comparison))
 
-	_ = hfObj.GenerateOldVersion(comparison, dir+"text.2", dir+"text.oldFile")
+	_ = hfObj.GenerateOldVersion(comparison, dir+"text_2.txt", dir+"text.oldFile")
 
-	oldFile := module.SHA256file(dir + "text.1")
-	newFile := module.SHA256file(dir + "text.2")
+	oldFile := module.SHA256file(dir + "text_1.txt")
+	newFile := module.SHA256file(dir + "text_2.txt")
 	generateFile := module.SHA256file(dir + "text.oldFile")
 	log.Info("HASH256",
 		zap.Bool(" OLD to Generate", oldFile == generateFile),
