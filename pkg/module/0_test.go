@@ -23,6 +23,17 @@ func generateFile(paragraphs uint16) string {
 	file.Close()
 	return name
 }
+func generateFileTXT(paragraphs uint16) string {
+	name := faker.Password() + ".txt"
+	file, _ := os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+
+	for i := uint16(0); i < paragraphs; i++ {
+		file.WriteString(faker.Paragraph())
+	}
+
+	file.Close()
+	return name
+}
 
 // Тест на методы криптографии
 func TestCrypt(t *testing.T) {
@@ -85,7 +96,7 @@ func (obj testObj) testPoint(status bool, text string) {
 
 /*	Тест на класс historyFall	*/
 func TestHistoryFall(t *testing.T) {
-	log := zaptest.NewLogger(t, zaptest.Level(zap.DebugLevel)) // DebugLevel | InfoLevel | WarnLevel | ErrorLevel
+	log := zaptest.NewLogger(t, zaptest.Level(zap.ErrorLevel)) // DebugLevel | InfoLevel | WarnLevel | ErrorLevel
 
 	obj := testObj{Init(log, "__TEST__"), t}
 	defer obj.sql.Close()
@@ -163,7 +174,7 @@ func (obj testObj) databaseFile() {
 		buf := strings.Split(tempValue, ":")
 		size, _ := strconv.ParseUint(buf[1], 10, 16)
 
-		fileName := generateFile(uint16(size))
+		fileName := generateFileTXT(uint16(size))
 		fileObj := testFileObj{}
 		defer os.Remove(fileName)
 
@@ -185,13 +196,20 @@ func (obj testObj) databaseFile() {
 
 	/**/
 
+	//	Проверка на добавление файла с невалидным раcширением
+	obj.log.Error("NOPE [Invalid fileType]")
+	fakeFileID := obj.sql.addFile(faker.Word()+".ll"+faker.Word(), 0)
+	obj.testPoint(fakeFileID != 0, "addFile fakeFile: Type")
+
 	//	Проверка на добавление несуществующего файла
-	fakeFileID := obj.sql.addFile(faker.Word(), 0)
+	obj.log.Error("NOPE [File not found]")
+	fakeFileID = obj.sql.addFile(faker.Word()+".txt", 0)
 	obj.testPoint(fakeFileID != 0, "addFile fakeFile: ID")
 
 	//	Проверка на добавление файла с невалидным вектором
-	fakeFileName := generateFile(10)
+	fakeFileName := generateFileTXT(10)
 	defer os.Remove(fakeFileName)
+	obj.log.Error("NOPE [Invalid begin vector]")
 	fakeFileID = obj.sql.addFile(fakeFileName, 999)
 	fakeFileObj, fakeFileStatus := obj.sql.getFile(fakeFileID)
 	obj.testPoint(fakeFileObj.id != fakeFileID, "getFile fakeFileVector: ID")
