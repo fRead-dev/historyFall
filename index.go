@@ -8,14 +8,16 @@ import (
 
 func main() {
 	log, _ := system.ZapConf.Build() //Инициализация логера
-	defer log.Sync()
+	defer func(log *zap.Logger) {
+		_ = log.Sync()
+	}(log)
 	log.Warn("Start " + system.GlobalName)
 
-	GO(log)
+	tempTest(log)
 }
 
 // todo Временный метод для отдладки
-func GO(log *zap.Logger) {
+func tempTest(log *zap.Logger) {
 	log.Info("Work from file")
 	dir := "./pkg/_temp/"
 
@@ -26,7 +28,7 @@ func GO(log *zap.Logger) {
 	comparison, _ := hfObj.Comparison(dir+"text.1", dir+"text.2")
 	log.Info("Полученые расхлжения", zap.String("comparison", comparison))
 
-	hfObj.GenerateOldVersion(comparison, dir+"text.2", dir+"text.oldFile")
+	_ = hfObj.GenerateOldVersion(comparison, dir+"text.2", dir+"text.oldFile")
 
 	oldFile := module.SHA256file(dir + "text.1")
 	newFile := module.SHA256file(dir + "text.2")
