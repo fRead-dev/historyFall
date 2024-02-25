@@ -68,6 +68,7 @@ type testObj struct {
 func (obj testObj) testPoint(status bool, text string) {
 	if status {
 		obj.log.DPanic("Invalid: " + text)
+		obj.t.Fail()
 	} else {
 		obj.log.Debug("Valid: " + text)
 	}
@@ -101,13 +102,34 @@ func (obj testObj) databaseSHA() {
 		zap.Any("hashParagraph", []string{strconv.Itoa(int(hashParagraphID)), hashParagraph}),
 	)
 
-	//	Проверка на отсутствие дубликатов
-	dublicate := obj.sql.addSHA(hashWord)
-	obj.testPoint(dublicate != hashWordID, "Duplicate")
+	/**/
 
-	//	Проверка на NULL
-	idNull, statusNull := obj.sql.searchSHA(SHA1(faker.Paragraph()))
-	obj.testPoint(idNull != 0, "idNull")
-	obj.testPoint(statusNull, "statusNull")
+	//	Проверка на отсутствие дубликатов
+	SHAaddDublicate := obj.sql.addSHA(hashWord)
+	obj.testPoint(SHAaddDublicate != hashWordID, "SHAaddDublicate")
+
+	/**/
+
+	//	Проверка на поиск
+	SHAsearchID, SHAsearchStatus := obj.sql.searchSHA(hashName)
+	obj.testPoint(SHAsearchID != hashNameID, "SHAsearchID")
+	obj.testPoint(!SHAsearchStatus, "SHAsearchStatus")
+
+	//	Проверка на поиск NULL
+	SHAsearchNullID, SHAsearchNullStatus := obj.sql.searchSHA(SHA1(faker.Paragraph()))
+	obj.testPoint(SHAsearchNullID != 0, "SHAsearchNullID")
+	obj.testPoint(SHAsearchNullStatus, "SHAsearchNullStatus")
+
+	/**/
+
+	//	проверка на получение существуюшей записи
+	SHAgetHash, SHAgetStatus := obj.sql.getSHA(hashWordID)
+	obj.testPoint(SHAgetHash != hashWord, "SHAgetHash")
+	obj.testPoint(!SHAgetStatus, "SHAgetStatus")
+
+	//	проверка на получение несуществуюшей записи
+	SHAgetNullHash, SHAgetNullStatus := obj.sql.getSHA(hashParagraphID * hashParagraphID)
+	obj.testPoint(SHAgetNullHash != "", "SHAgetNullHash")
+	obj.testPoint(SHAgetNullStatus, "SHAgetNullStatus")
 
 }
