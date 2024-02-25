@@ -5,9 +5,7 @@ import (
 )
 
 // Проверка на существование файла в директории
-func (obj HistoryFallObj) FileExist(fileName string) bool {
-	dir := obj.dir
-
+func FileExist(dir string, fileName string) bool {
 	//Генерация пути к базе с учетом тестирования
 	if dir == "__TEST__" {
 		dir = ""
@@ -20,4 +18,9 @@ func (obj HistoryFallObj) FileExist(fileName string) bool {
 	} else {
 		return true
 	}
+}
+
+// Проверка на существование файла в рабочей директории класса
+func (obj HistoryFallObj) FileExist(fileName string) bool {
+	return FileExist(obj.dir, fileName)
 }
