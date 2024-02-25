@@ -26,7 +26,7 @@ func generateFile(paragraphs uint16) string {
 
 // Тест на методы криптографии
 func TestCrypt(t *testing.T) {
-	log := zaptest.NewLogger(t)
+	log := zaptest.NewLogger(t, zaptest.Level(zap.WarnLevel)) // DebugLevel | InfoLevel | WarnLevel | ErrorLevel
 
 	log.Info("SHA1",
 		zap.Any("null", SHA1("")),
@@ -78,11 +78,14 @@ func (obj testObj) testPoint(status bool, text string) {
 
 /*	Тест на класс historyFall	*/
 func TestHistoryFall(t *testing.T) {
-	log := zaptest.NewLogger(t)
-	log.Warn("TEST lib HistoryFall " + constVersionHistoryFall)
+	log := zaptest.NewLogger(t, zaptest.Level(zap.WarnLevel)) // DebugLevel | InfoLevel | WarnLevel | ErrorLevel
 
 	obj := testObj{Init(log, "__TEST__"), t}
 	defer obj.sql.Close()
+
+	//	Проверка метода проверки существания файла
+	obj.testPoint(!obj.FileExist("0_test.go"), "FileExist TRUE")
+	obj.testPoint(obj.FileExist(SHA1(faker.Paragraph())+"."+faker.Word()), "FileExist FALSE")
 
 	obj.sql.autoCheck()
 
@@ -162,6 +165,7 @@ func (obj testObj) databaseFile() {
 
 		fileName := generateFile(uint16(size))
 		fileObj := testFileObj{}
+		defer os.Remove(fileName)
 
 		fileObj.value = buf[0]
 		fileObj.hash = SHA256file(fileName)
@@ -169,7 +173,6 @@ func (obj testObj) databaseFile() {
 		fileObj.dbID = obj.sql.addFile(fileName, 0)
 
 		filesArr[pos] = fileObj
-		defer os.Remove(fileName)
 
 		obj.log.Info("Create File "+fileObj.value,
 			zap.Any("ID", fileObj.dbID),
@@ -182,10 +185,36 @@ func (obj testObj) databaseFile() {
 
 	/**/
 
-	//	Проверка на поиск по названию файла
+	//	Проверка на добавление несуществующего файла
+	fakeFileID := obj.sql.addFile(faker.Word(), 0)
+	obj.testPoint(fakeFileID != 0, "addFile fakeFile: ID")
+
+	//	Проверка на добавление файла с невалидным вектором
+	fakeFileName := generateFile(10)
+	defer os.Remove(fakeFileName)
+	fakeFileID = obj.sql.addFile(fakeFileName, 999)
+	fakeFileObj, fakeFileStatus := obj.sql.getFile(fakeFileID)
+	obj.testPoint(fakeFileObj.id != fakeFileID, "getFile fakeFileVector: ID")
+	obj.testPoint(fakeFileObj.begin != 999, "getFile fakeFileVector: VECTOR")
+	obj.testPoint(!fakeFileStatus, "getFile fakeFileVector: STATUS")
+
+	/**/
+
+	//	Перебор всех сгенерированых файлов
 	for _, fileObj := range filesArr {
+		obj.log.Debug("LOOP", zap.Any("file", fileObj.value))
+
+		//	Проверка на поиск по названию файла
 		retFileObj, retFileStatus := obj.sql.searchFile(fileObj.info.Name())
-		obj.testPoint(retFileObj.id != fileObj.dbID, "searchFile ["+fileObj.value+"] obj")
-		obj.testPoint(!retFileStatus, "searchFile ["+fileObj.value+"] status")
+		obj.testPoint(retFileObj.id != fileObj.dbID, "searchFile ID")
+		obj.testPoint(!retFileStatus, "searchFile STATUS")
+
+		//	Проверка на поиск по названию файла
+		retFileObj, retFileStatus = obj.sql.getFile(fileObj.dbID)
+		obj.testPoint(retFileObj.key != fileObj.info.Name(), "getFile KEY")
+		obj.testPoint(!retFileStatus, "getFile STATUS")
+
+		obj.log.Debug("")
 	}
+
 }
