@@ -5,7 +5,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/sergi/go-diff/diffmatchpatch"
 	"io"
+	"io/ioutil"
 	"os"
 )
 
@@ -44,4 +46,45 @@ func SHA256file(filePath string) string {
 
 	// Преобразуем хеш-сумму в строку в шестнадцатеричном формате
 	return fmt.Sprintf("%x", hashBytes)
+}
+
+// Подсчет совпавших битов между двумя хешами
+func MatchBetweenFiles(fileName1 string, fileName2 string) uint16 {
+	//var count uint16 = 0
+
+	file1, err := ioutil.ReadFile(fileName1)
+	if err != nil {
+		return 0
+	}
+
+	file2, err := ioutil.ReadFile(fileName2)
+	if err != nil {
+		return 0
+	}
+
+	//	Поиск расхождений между полученными строками
+	dmp := diffmatchpatch.New()
+	diffs := dmp.DiffMain(string(file1), string(file2), false)
+
+	// Вычисляем общее количество символов в обоих файлах
+	totalChars := 0
+	for _, diff := range diffs {
+		totalChars += len(diff.Text)
+	}
+
+	// Вычисляем количество общих символов
+	sharedChars := 0
+	for _, diff := range diffs {
+		if diff.Type == diffmatchpatch.DiffEqual {
+			sharedChars += len(diff.Text)
+		}
+	}
+
+	// Вычисляем степень сходства как отношение общих символов к общему количеству символов
+	if totalChars > 0 {
+		rez := float64(sharedChars) / float64(totalChars)
+		return uint16(rez * 1000)
+	}
+
+	return 0
 }
