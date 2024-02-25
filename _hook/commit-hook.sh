@@ -1,7 +1,7 @@
 #!/bin/sh
 
 VERSION="1.0"
-fileConst="$PWD/module/historyConst.go"
+fileConst="$PWD/pkg/module/historyConst.go"
 dateNow=$(date +"%m-%d-%Y")
 
 
