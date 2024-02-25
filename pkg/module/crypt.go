@@ -47,7 +47,9 @@ func SHA256file(filePath string) string {
 	return fmt.Sprintf("%x", hashBytes)
 }
 
-// Поиск расхождений между полученными строками
+//.//
+
+// Расчет расхождения между полученными строками
 func MachDiff(firstText *string, secondText *string) uint16 {
 	dmp := diffmatchpatch.New()
 	diffs := dmp.DiffMain(*firstText, *secondText, false)
@@ -79,4 +81,29 @@ func MachDiff(firstText *string, secondText *string) uint16 {
 	}
 
 	return 0
+}
+
+// Получение массива с контрольными суммами совпадений между полученными строками
+func MachDiffHashArr(firstText *string, secondText *string) []string {
+	var array []string
+
+	dmp := diffmatchpatch.New()
+	diffs := dmp.DiffMain(*firstText, *secondText, false)
+
+	// Вычисляем общее количество символов в обоих файлах
+	totalChars := uint64(0)
+	for _, diff := range diffs {
+		totalChars += uint64(len(diff.Text))
+	}
+
+	// Формируем массив совпадений
+	for _, diff := range diffs {
+		if diff.Type == diffmatchpatch.DiffEqual {
+			if len(diff.Text) > 0 {
+				array = append(array, SHA1(diff.Text))
+			}
+		}
+	}
+
+	return array
 }

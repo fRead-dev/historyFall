@@ -80,6 +80,20 @@ func MatchBetweenFiles(firstFilePath string, secondFilePath string) uint16 {
 	return MachDiff(&firstFile, &secondFile)
 }
 
+// Получение массива хешей по совпадениям между файлами
+func (obj HistoryFallObj) MatchBetweenFilesHashArr(firstFileName string, secondFileName string) []string {
+	firstFile := obj.LoadTextInFile(firstFileName, true, true)
+	secondFile := obj.LoadTextInFile(secondFileName, true, true)
+
+	return MachDiffHashArr(&firstFile, &secondFile)
+}
+func MatchBetweenFilesHashArr(firstFilePath string, secondFilePath string) []string {
+	firstFile := LoadTextInFile(firstFilePath, true, true)
+	secondFile := LoadTextInFile(secondFilePath, true, true)
+
+	return MachDiffHashArr(&firstFile, &secondFile)
+}
+
 // Получение только текста из файла
 func (obj HistoryFallObj) LoadTextInFile(fileName string, singleRegister bool, fReadMarkup bool) string {
 
