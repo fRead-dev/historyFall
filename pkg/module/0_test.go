@@ -63,6 +63,13 @@ type testObj struct {
 	HistoryFallObj
 	t *testing.T
 }
+type testFileObj struct {
+	value string
+
+	dbID uint32
+	info os.FileInfo
+	hash string
+}
 
 // Простой обработчик по условию
 func (obj testObj) testPoint(status bool, text string) {
@@ -140,13 +147,6 @@ func (obj testObj) databaseSHA() {
 
 }
 func (obj testObj) databaseFile() {
-	type testFileObj struct {
-		value string
-
-		dbID uint32
-		info os.FileInfo
-		hash string
-	}
 	var filesArr [5]testFileObj
 
 	//	Массив файлов для теста
@@ -217,4 +217,9 @@ func (obj testObj) databaseFile() {
 		obj.log.Debug("")
 	}
 
+	// Работа с векторами на базе тех же самых файлов
+	obj.databaseVectors(filesArr[:])
+}
+func (obj testObj) databaseVectors(filesArr []testFileObj) {
+	//for _, fileObj := range *filesArr {}
 }
