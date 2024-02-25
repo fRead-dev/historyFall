@@ -1,7 +1,7 @@
 package main
 
 import (
-	"historyFall/module"
+	module "github.com/fRead-dev/historyFall/module"
 	"historyFall/system"
 )
 
