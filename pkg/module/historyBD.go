@@ -15,6 +15,9 @@ type localSQLiteObj struct {
 	name string //	Название директории за которую отвечает historyFall
 	dir  string //	полный путь к дериктории
 
+	ver            string   //	Версия используемой структуры
+	fileExtensions []string //	Допустимые расширения файлов
+
 	db  *sql.DB
 	log *zap.Logger
 }
@@ -103,6 +106,10 @@ func initDB(log *zap.Logger, dir string, name string) localSQLiteObj {
 		obj.optimizationDB()
 	}
 
+	//	Выгрузка локальных параметров с базы
+	obj.fileExtensions = obj.getExtensions()
+	obj.ver = obj.getVersion()
+
 	return obj
 }
 func (obj localSQLiteObj) Close() { obj.db.Close() }
@@ -147,6 +154,35 @@ func (obj localSQLiteObj) optimizationDB() {
 	if err != nil {
 		obj.log.Panic("Break 'VACUUM' from DB", zap.Error(err))
 	}
+}
+
+//.
+
+func (obj localSQLiteObj) getVersion() string {
+	var version string
+
+	err := obj.db.QueryRow("SELECT `name` FROM `info` WHERE `name`='ver'").Scan(&version)
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
+			obj.log.Error("DB", zap.String("func", "getVersion"), zap.Error(err))
+		}
+		version = "0.0.0"
+	}
+
+	return version
+}
+func (obj localSQLiteObj) getExtensions() []string {
+	var extensions string
+
+	err := obj.db.QueryRow("SELECT `name` FROM `info` WHERE `name`='extensions'").Scan(&extensions)
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
+			obj.log.Error("DB", zap.String("func", "getVersion"), zap.Error(err))
+		}
+		extensions = "txt.md"
+	}
+
+	return strings.Split(extensions, ".")
 }
 
 //.
@@ -443,6 +479,7 @@ func (obj localSQLiteObj) updFile(id uint32, beginID uint32, isDel bool) {
 // Добавление нового файла
 func (obj localSQLiteObj) addFile(name string, beginID uint32) uint32 {
 	if !FileExist(obj.dir, name) { //	Проверка на физическое наличие данного файла в директории
+		obj.log.Error("File not found", zap.String("func", "addFile"), zap.String("func", name))
 		return 0
 	}
 
@@ -459,9 +496,12 @@ func (obj localSQLiteObj) addFile(name string, beginID uint32) uint32 {
 	}
 
 	//	Обнуление вектора если такого нет в базе
-	_, validVector := obj.getVector(beginID)
-	if !validVector {
-		beginID = 0
+	if beginID > 0 {
+		_, validVector := obj.getVector(beginID)
+		if !validVector {
+			obj.log.Error("Invalid begin vector", zap.String("func", "addFile"), zap.Any("beginID", beginID))
+			beginID = 0
+		}
 	}
 
 	tx := obj.BeginTransaction("addFile")
