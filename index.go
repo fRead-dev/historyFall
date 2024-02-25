@@ -26,8 +26,6 @@ func tempTest(log *zap.Logger) {
 
 	module.IsValidFileType("text.fg", []string{"fg", "gh"})
 
-	return
-
 	//получение веткора изменений между файлами
 	comparison, _ := hfObj.Comparison(dir+"text_1.txt", dir+"text_2.txt")
 	log.Info("Полученые расхлжения", zap.String("comparison", comparison))
@@ -36,6 +34,14 @@ func tempTest(log *zap.Logger) {
 
 	oldFile := module.SHA256file(dir + "text_1.txt")
 	newFile := module.SHA256file(dir + "text_2.txt")
+
+	log.Info("MatchingBitsInHash",
+		zap.Any("old > new", module.MatchBetweenFiles(dir+"text_2.txt", dir+"text_1.txt")),
+		zap.Any("old > new", module.MatchBetweenFiles(dir+"text_2.txt", dir+"text_2.txt")),
+		zap.Any("old > tp", module.MatchBetweenFiles(dir+"._temp.hf", dir+"text_1.txt")),
+	)
+
+	return
 	generateFile := module.SHA256file(dir + "text.oldFile")
 	log.Info("HASH256",
 		zap.Bool(" OLD to Generate", oldFile == generateFile),
