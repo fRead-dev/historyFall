@@ -6,6 +6,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -283,11 +284,12 @@ func (obj localSQLiteObj) initValues() {
 		"'name', '" + obj.name + "'",
 		"'create', '" + strconv.FormatInt(currentTime, 10) + "'",
 		"'upd', '" + strconv.FormatInt(currentTime, 10) + "'",
+		"'extensions', '" + strings.Join(constTextExtensions, ".") + "'", //	Допустимые расширения для файла
 	}
 
 	//	Заполение INFO-таблицы
 	for _, query := range infoTable {
-		query = "INSERT INTO info (name, data) VALUES (" + query + ")"
+		query = "INSERT INTO `info` (`name`, `data`) VALUES (" + query + ")"
 		obj.ExecTransaction(tx, query)
 	}
 

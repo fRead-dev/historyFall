@@ -66,3 +66,16 @@ func ValidFileName(name string, maxLength int) string {
 
 	return validFileName
 }
+
+// Функция для проверки допустимости имени файла
+func IsValidFileType(fileName string, fileExtensions []string) bool {
+	fileExt := strings.ToLower(fileName[(strings.LastIndex(fileName, ".") + 1):])
+
+	for _, ext := range fileExtensions {
+		if fileExt == ext {
+			return true // Расширение найдено, файл допустим
+		}
+	}
+
+	return false // Расширение не найдено, файл не допустим
+}
