@@ -78,7 +78,7 @@ func (obj testObj) testPoint(status bool, text string) {
 /*	Тест на класс historyFall	*/
 func TestHistoryFall(t *testing.T) {
 	log := zaptest.NewLogger(t)
-	log.Warn("TEST " + system.GlobalName)
+	log.Warn("TEST lib HistoryFall " + constVersionHistoryFall)
 
 	obj := testObj{Init(log, "__TEST__"), t}
 	defer obj.sql.Close()
