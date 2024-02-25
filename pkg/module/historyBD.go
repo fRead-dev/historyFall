@@ -440,6 +440,11 @@ func (obj localSQLiteObj) updFile(id uint32, beginID uint32, isDel bool) {
 
 // Добавление нового файла
 func (obj localSQLiteObj) addFile(name string, beginID uint32) uint32 {
+	if !FileExist(obj.dir, name) { //	Проверка на физическое наличие данного файла в директории
+		return 0
+	}
+
+	//	Поиск совпадений по базе
 	fileObj, status := obj.searchFile(name)
 
 	//	Обработка если такой файл в базе
@@ -449,6 +454,12 @@ func (obj localSQLiteObj) addFile(name string, beginID uint32) uint32 {
 		}
 
 		return fileObj.id
+	}
+
+	//	Обнуление вектора если такого нет в базе
+	_, validVector := obj.getVector(beginID)
+	if !validVector {
+		beginID = 0
 	}
 
 	tx := obj.BeginTransaction("addFile")

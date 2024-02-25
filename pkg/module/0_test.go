@@ -78,7 +78,7 @@ func (obj testObj) testPoint(status bool, text string) {
 
 /*	Тест на класс historyFall	*/
 func TestHistoryFall(t *testing.T) {
-	log := zaptest.NewLogger(t, zaptest.Level(zap.WarnLevel)) // DebugLevel | InfoLevel | WarnLevel | ErrorLevel
+	log := zaptest.NewLogger(t, zaptest.Level(zap.DebugLevel)) // DebugLevel | InfoLevel | WarnLevel | ErrorLevel
 
 	obj := testObj{Init(log, "__TEST__"), t}
 	defer obj.sql.Close()
@@ -195,7 +195,7 @@ func (obj testObj) databaseFile() {
 	fakeFileID = obj.sql.addFile(fakeFileName, 999)
 	fakeFileObj, fakeFileStatus := obj.sql.getFile(fakeFileID)
 	obj.testPoint(fakeFileObj.id != fakeFileID, "getFile fakeFileVector: ID")
-	obj.testPoint(fakeFileObj.begin != 999, "getFile fakeFileVector: VECTOR")
+	obj.testPoint(fakeFileObj.begin == 999, "getFile fakeFileVector: VECTOR")
 	obj.testPoint(!fakeFileStatus, "getFile fakeFileVector: STATUS")
 
 	/**/
