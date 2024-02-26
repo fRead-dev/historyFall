@@ -24,37 +24,34 @@ func tempTest(log *zap.Logger) {
 	hfObj := module.Init(log, dir)
 	defer hfObj.Close()
 
-	module.IsValidFileType("text.fg", []string{"fg", "gh"})
+	text1, text2, generateNew, GenerateOld := "text_1.txt", "text_2.txt", "text.oldFile.txt", "text.newFile.txt"
 
 	//получение веткора изменений между файлами
-	comparison, _ := hfObj.Comparison(dir+"text_1.txt", dir+"text_2.txt")
+	comparison, _ := hfObj.Comparison(dir+text1, dir+text2)
 	log.Info("Полученые расхлжения", zap.String("comparison", comparison))
 
-	_ = hfObj.GenerateOldVersion(comparison, dir+"text_2.txt", dir+"text.oldFile")
+	_ = hfObj.GenerateOldVersion(comparison, dir+text2, dir+GenerateOld)
+	_ = hfObj.GenerateOldVersion(comparison, dir+text1, dir+generateNew)
 
-	oldFile := module.SHA256file(dir + "text_1.txt")
-	newFile := module.SHA256file(dir + "text_2.txt")
+	oldFile := module.SHA256file(dir + text1)
+	newFile := module.SHA256file(dir + text2)
+	generateOldFile := module.SHA256file(dir + GenerateOld)
+	generateNewFile := module.SHA256file(dir + generateNew)
 
-	log.Info("MatchBetweenFiles",
-		zap.Any("old > new", module.MatchBetweenFiles(dir+"text_2.txt", dir+"text_1.txt")),
-		zap.Any("new > new", module.MatchBetweenFiles(dir+"text_2.txt", dir+"text_2.txt")),
-		zap.Any("old > tp", module.MatchBetweenFiles("index.go", dir+"text_1.txt")),
-	)
-
-	log.Info("MatchBetweenFilesHashArr",
-		zap.Any("old > new", module.MatchBetweenFilesHashArr(dir+"text_2.txt", dir+"text_1.txt")),
-		zap.Any("new > new", module.MatchBetweenFilesHashArr(dir+"text_2.txt", dir+"text_2.txt")),
-		zap.Any("old > tp", module.MatchBetweenFilesHashArr("index.go", dir+"text_1.txt")),
-	)
-
-	return
-	generateFile := module.SHA256file(dir + "text.oldFile")
-	log.Info("HASH256",
-		zap.Bool(" OLD to Generate", oldFile == generateFile),
-		zap.Bool("NEW to Generate", newFile == generateFile),
-		zap.String("OLD", oldFile),
+	log.Info("generateOldFile",
+		zap.Bool("Generate to NEW", generateOldFile == newFile),
+		zap.Bool("Generate to OLD", generateOldFile == oldFile),
 		zap.String("NEW", newFile),
-		zap.String("Generate", generateFile),
+		zap.String("OLD", oldFile),
+		zap.String("Generate", generateOldFile),
+	)
+
+	log.Info("generateNewFile",
+		zap.Bool("Generate to NEW", generateNewFile == newFile),
+		zap.Bool("Generate to OLD", generateNewFile == oldFile),
+		zap.String("NEW", newFile),
+		zap.String("OLD", oldFile),
+		zap.String("Generate", generateNewFile),
 	)
 
 }
