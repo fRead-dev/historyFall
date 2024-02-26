@@ -66,7 +66,7 @@ func IsValidFileType(fileName string, fileExtensions []string) bool {
 
 //.//
 
-// Подсчет совпавших битов между двумя хешами
+// Подсчет совпавших битов между двумя файлами
 func (obj HistoryFallObj) MatchBetweenFiles(firstFileName string, secondFileName string) uint16 {
 	firstFile := obj.LoadTextInFile(firstFileName, true, true)
 	secondFile := obj.LoadTextInFile(secondFileName, true, true)

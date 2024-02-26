@@ -9,8 +9,8 @@ import (
 	"strconv"
 )
 
-// Инициализация класса работы с historyFall
-func Init(log *zap.Logger, dir string) HistoryFallObj {
+// Легкая первичная инициализация (без базы)
+func InitLight(log *zap.Logger, dir string) HistoryFallObj {
 	log.Warn("Init historyFall " + constVersionHistoryFall)
 
 	//	Получение текущей дериктории если задана слишком короткая
@@ -23,8 +23,16 @@ func Init(log *zap.Logger, dir string) HistoryFallObj {
 	obj.dir = dir
 	obj.log = log
 
+	return obj
+}
+
+// Инициализация класса работы с historyFall
+func Init(log *zap.Logger, dir string) HistoryFallObj {
+	obj := InitLight(log, dir)
+
 	//	Инициализация базы
 	sql := initDB(log, obj.dir, filepath.Base(obj.dir))
+	obj.sqlInit = true
 	obj.sql = &sql
 
 	return obj
@@ -38,7 +46,9 @@ func AutoInit(dir string) HistoryFallObj {
 
 // Закрытие всех необходимых вещей
 func (obj HistoryFallObj) Close() {
-	obj.sql.Close()
+	if obj.sqlInit {
+		obj.sql.Close()
+	}
 }
 
 //	#####################################################################################	//
