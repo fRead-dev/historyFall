@@ -146,20 +146,20 @@ func (obj HistoryFallObj) generateStoryVector(newText *[]byte, oldText *[]byte) 
 //	############################################################################################	//
 
 // сравнение двух файлов и получение текстового вектора изменений
-func (obj HistoryFallObj) Comparison(file1 string, file2 string) (string, error) {
+func (obj HistoryFallObj) Comparison(oldFile string, newFile string) (string, error) {
 
-	file1Bytes, err := ioutil.ReadFile(file1)
+	oldFileBytes, err := ioutil.ReadFile(oldFile)
 	if err != nil {
 		return "", err
 	}
 
-	file2Bytes, err := ioutil.ReadFile(file2)
+	newFileBytes, err := ioutil.ReadFile(newFile)
 	if err != nil {
 		return "", err
 	}
 
 	//Получаем вектор изменений
-	returnSlice := obj.generateStoryVector(&file1Bytes, &file2Bytes)
+	returnSlice := obj.generateStoryVector(&oldFileBytes, &newFileBytes)
 
 	return returnSlice, nil
 }
@@ -172,21 +172,19 @@ func (obj HistoryFallObj) GenerateOldVersion(comparison string, defFile string, 
 	//парсим вектор в точки
 	historyList := obj.DecodeStoryVector(&comparison)
 
-	for _, gggggg := range historyList {
-		obj.log.Debug(strconv.FormatUint(gggggg.pos, 10), zap.Any("text", gggggg.text), zap.Any("isInsert", gggggg.isInsert))
-	}
-
 	// Открываем файл для чтения
 	fileRead, err := os.Open(defFile)
 	if err != nil {
 		return err
 	}
+	defer fileRead.Close()
 
 	// Открытие файла для записи		|| флаг os.O_WRONLY|os.O_CREATE|os.O_TRUNC указывает на то, что файл будет создан или перезаписан, если уже существует.
 	fileWrite, err := os.OpenFile(saveOldFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return err
 	}
+	defer fileWrite.Close()
 
 	scanner := bufio.NewScanner(fileRead) // 	Создаем новый сканер, который будет читать из файла
 	var pos uint32 = 0                    //	Координата по истории векторов
@@ -257,10 +255,6 @@ func (obj HistoryFallObj) GenerateOldVersion(comparison string, defFile string, 
 		fileWrite.WriteString(textRet)
 	}
 
-	//	Закрытие работы с файлами
-	fileRead.Close()
-	fileWrite.Close()
-
 	//Отсечение если выбило ошибку
 	if err := scanner.Err(); err != nil {
 		return err
@@ -270,7 +264,7 @@ func (obj HistoryFallObj) GenerateOldVersion(comparison string, defFile string, 
 }
 
 // Генерация файла более новой версии относительно вектора
-func (obj HistoryFallObj) GenerateOldNew(comparison string, defFile string, saveNewFile string) error {
+func (obj HistoryFallObj) GenerateNewVersion(comparison string, defFile string, saveNewFile string) error {
 
 	//парсим вектор в точки
 	historyList := obj.DecodeStoryVector(&comparison)
@@ -324,28 +318,44 @@ func (obj HistoryFallObj) GenerateOldNew(comparison string, defFile string, save
 			//	Перебираем измененную строку
 			for historyList[pos].pos <= (size + lineSize) {
 				localPoint := historyList[pos].pos - size
+				////
 
-				//	Добавляем начальные данные если нужно
-				if localPoint > 0 {
-					textRet += string(line[localPos:localPoint])
+				obj.log.Info("\n", zap.Any("pos", pos), zap.Any("localPos", localPos), zap.Any("localPoint", localPoint), zap.Any("text", historyList[pos].text), zap.Any("textRet", textRet))
+
+				if uint32(len(historyList)) > pos+1 {
+					if historyList[pos].pos == historyList[pos+1].pos {
+						if historyList[pos].isInsert {
+							textRet += string(line[localPos : localPos+localPoint])
+							localPos += uint64(len(historyList[pos].text))
+						} else {
+							textRet += historyList[pos].text
+						}
+						pos += 2
+						continue
+					}
 				}
 
-				//	обработка добавления\удаления
-				if !historyList[pos].isInsert {
-					textRet += historyList[pos].text
-				} else {
-					localPoint += uint64(len(historyList[pos].text))
+				if pos > 0 {
+					if historyList[pos].pos == historyList[pos-1].pos {
+						if historyList[pos].isInsert {
+							textRet += string(line[localPos : localPos+localPoint])
+							localPos += uint64(len(historyList[pos].text))
+						} else {
+							textRet += historyList[pos].text
+						}
+						pos += 2
+						continue
+					}
 				}
 
-				//	Буферизация точки вхождения
-				localPos = localPoint
+				//obj.log.Info(historyList[pos].text, zap.Any("pos", pos), zap.Any("localPos", localPos), zap.Any("textRet", textRet))
 
-				//
+				////
 				pos++
-				if uint32(len(historyList)) <= pos {
-					break
-				}
 			}
+
+			obj.log.Debug(textRet)
+			return nil
 
 			//	Добавление остатка данных если остались
 			if localPos < lineSize {
