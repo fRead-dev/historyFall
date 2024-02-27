@@ -37,13 +37,20 @@ func BBBBBBB(log *zap.Logger) {
 		// Получение типа
 		fieldType := field.Type
 
-		if field.Type.Kind() == reflect.Struct || field.Type.Kind() == reflect.Ptr {
-			fmt.Printf("Ссылка на структуру\n")
-		} else {
-			// Вывод информации о поле
-			fmt.Printf("Поле: %s\n\tТип: %s\n\t байт\n\tJSON тег: %s\n\tDB тег: %s\n", fieldName, fieldType, jsonTag, dbTag)
-		}
+		switch field.Type.Kind() {
+		case reflect.Struct:
+			kk := field.Type.Field(0)
+			fmt.Printf("Структура '%s' \n", kk.Type)
+			break
 
+		case reflect.Ptr:
+			fmt.Printf("ссылка на структуру \n")
+			break
+
+		default:
+			fmt.Printf("Поле: %s\n\tТип: %s\n\t байт\n\tJSON тег: %s\n\tDB тег: %s\n", fieldName, fieldType, jsonTag, dbTag)
+			break
+		}
 	}
 
 }
