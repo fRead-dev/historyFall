@@ -27,8 +27,6 @@ func tempTest(log *zap.Logger) {
 	hfObj := module.Init(log, dir)
 	defer hfObj.Close()
 
-	hfObj.BB
-
 	text1, text2, generateFile := "text_1.txt", "text_2.txt", "text.newFile.txt"
 
 	//получение веткора изменений между файлами

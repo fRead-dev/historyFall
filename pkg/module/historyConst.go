@@ -1,4 +1,4 @@
 package module
 
-const constVersionHistoryFall string = "1.0.e28c6f4c"
-const constDateUpdateHistoryFall string = "02-27-2024"
+const constVersionHistoryFall string = "1.0.53ac5008"
+const constDateUpdateHistoryFall string = "02-28-2024"
