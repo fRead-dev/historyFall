@@ -21,8 +21,13 @@ func tempTest(log *zap.Logger) {
 	log.Info("Work from file")
 	dir := "./pkg/_temp/"
 
+	module.BBBBBBB(log)
+	return
+
 	hfObj := module.Init(log, dir)
 	defer hfObj.Close()
+
+	hfObj.BB
 
 	text1, text2, generateFile := "text_1.txt", "text_2.txt", "text.newFile.txt"
 
