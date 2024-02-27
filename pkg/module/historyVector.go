@@ -4,20 +4,13 @@ import (
 	"bytes"
 	"compress/flate"
 	"github.com/sergi/go-diff/diffmatchpatch"
-	"go.uber.org/zap"
 	"io/ioutil"
+	"os"
 	"unsafe"
 )
 
-// Трансформация строчного вектора изменений в массив точек изменений
-func (obj HistoryFallObj) DecodeStoryVector(comparison *string) []diffmatchpatch.Diff {
-	dmp := diffmatchpatch.New()
-	diffs, _ := dmp.DiffFromDelta("", *comparison)
-	return diffs
-}
-
 // Получение дельты изменения, сравнивая два текста
-func (obj HistoryFallObj) generateStoryVector(oldText *[]byte, newText *[]byte) string {
+func (obj HistoryFallObj) generateStoryVector(oldText *[]byte, newText *[]byte) []byte {
 
 	//	Формирование вектора
 	var vector string
@@ -38,22 +31,20 @@ func (obj HistoryFallObj) generateStoryVector(oldText *[]byte, newText *[]byte) 
 	writer.Write([]byte(vector))
 	writer.Close()
 
-	return compressed.String()
+	return compressed.Bytes()
 }
 
-//	############################################################################################	//
-
 // сравнение двух файлов и получение текстового вектора изменений
-func (obj HistoryFallObj) Comparison(oldFile string, newFile string) (string, error) {
+func (obj HistoryFallObj) Comparison(oldFile string, newFile string) ([]byte, error) {
 
 	oldFileBytes, err := ioutil.ReadFile(oldFile)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	newFileBytes, err := ioutil.ReadFile(newFile)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	//Получаем вектор изменений
@@ -62,29 +53,40 @@ func (obj HistoryFallObj) Comparison(oldFile string, newFile string) (string, er
 	return returnSlice, nil
 }
 
-//.//
-
 // Генерация файла более новой версии относительно вектора
-func (obj HistoryFallObj) GenerateNewVersion(comparison string, defFile string, saveNewFile string) error {
+func (obj HistoryFallObj) GenerateFileFromVector(comparison *[]byte, defFilePath string, saveNewFilePath string) error {
 
 	//	Расжатие вектора
-	reader := flate.NewReader(bytes.NewReader([]byte(comparison)))
+	reader := flate.NewReader(bytes.NewReader(*comparison))
 	decompressed, _ := ioutil.ReadAll(reader)
 	reader.Close()
-	comparison = string(decompressed)
+	vector := string(decompressed)
 
 	//	Чтение исходного файла
-	var oldFileBytes []byte = []byte("")
-	if unsafe.Sizeof(defFile) != 0 {
-		oldFileBytes, _ = ioutil.ReadFile(defFile)
+	var oldFileBytes []byte
+	if len(defFilePath) != 0 {
+		oldFileBytes, _ = ioutil.ReadFile(defFilePath)
 	}
 
 	//	Получение нового файла из исходного по вектору
 	dmp := diffmatchpatch.New()
-	diffs, errorDelta := dmp.DiffFromDelta(string(oldFileBytes), comparison)
-	text := dmp.DiffText2(diffs)
+	diffs, err := dmp.DiffFromDelta(string(oldFileBytes), vector)
+	if err != nil {
+		return err
+	}
 
-	obj.log.Debug(text, zap.Error(errorDelta))
+	//Открытие файла на запись
+	file, err := os.OpenFile(saveNewFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Запись данных в файл
+	_, err = file.WriteString(dmp.DiffText2(diffs))
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

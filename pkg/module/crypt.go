@@ -50,6 +50,8 @@ func SHA256file(filePath string) string {
 
 //.//
 
+//todo написать потом метод для обработки файлов напрямую
+
 // Расчет расхождения между полученными строками
 func MachDiff(firstText *string, secondText *string) uint16 {
 	dmp := diffmatchpatch.New()
