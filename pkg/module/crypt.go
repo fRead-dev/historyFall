@@ -8,6 +8,7 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"io"
 	"os"
+	"unsafe"
 )
 
 // Получение sha-1 строки из строки
@@ -57,14 +58,14 @@ func MachDiff(firstText *string, secondText *string) uint16 {
 	// Вычисляем общее количество символов в обоих файлах
 	totalChars := uint64(0)
 	for _, diff := range diffs {
-		totalChars += uint64(len(diff.Text))
+		totalChars += uint64(unsafe.Sizeof(diff.Text))
 	}
 
 	// Вычисляем количество общих символов
 	sharedChars := uint64(0)
 	for _, diff := range diffs {
 		if diff.Type == diffmatchpatch.DiffEqual {
-			sharedChars += uint64(len(diff.Text))
+			sharedChars += uint64(unsafe.Sizeof(diff.Text))
 		}
 	}
 
@@ -93,13 +94,13 @@ func MachDiffHashArr(firstText *string, secondText *string) []string {
 	// Вычисляем общее количество символов в обоих файлах
 	totalChars := uint64(0)
 	for _, diff := range diffs {
-		totalChars += uint64(len(diff.Text))
+		totalChars += uint64(unsafe.Sizeof(diff.Text))
 	}
 
 	// Формируем массив совпадений
 	for _, diff := range diffs {
 		if diff.Type == diffmatchpatch.DiffEqual {
-			if len(diff.Text) > 0 {
+			if unsafe.Sizeof(diff.Text) > 0 {
 				array = append(array, SHA1(diff.Text))
 			}
 		}

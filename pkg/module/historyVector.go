@@ -6,6 +6,7 @@ import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"go.uber.org/zap"
 	"io/ioutil"
+	"unsafe"
 )
 
 // Трансформация строчного вектора изменений в массив точек изменений
@@ -25,7 +26,7 @@ func (obj HistoryFallObj) generateStoryVector(oldText *[]byte, newText *[]byte) 
 	diffsSemantic := dmp.DiffCleanupSemantic(diffsNormal) //	Семантическое упрощение
 
 	//	Получение максимально оптимального вектора
-	if len(diffsNormal) < len(diffsSemantic) {
+	if unsafe.Sizeof(diffsNormal) < unsafe.Sizeof(diffsSemantic) {
 		vector = dmp.DiffToDelta(diffsNormal)
 	} else {
 		vector = dmp.DiffToDelta(diffsSemantic)
@@ -74,7 +75,7 @@ func (obj HistoryFallObj) GenerateNewVersion(comparison string, defFile string, 
 
 	//	Чтение исходного файла
 	var oldFileBytes []byte = []byte("")
-	if len(defFile) != 0 {
+	if unsafe.Sizeof(defFile) != 0 {
 		oldFileBytes, _ = ioutil.ReadFile(defFile)
 	}
 
