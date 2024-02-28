@@ -52,6 +52,17 @@ func (obj *_historyFall_dbSHA) getCache(id uint64) (string, bool) {
 	return value, status
 }
 
+// searchCache Поиск по кешированным результат перебором
+func (obj *_historyFall_dbSHA) searchCache(hash *string) (uint64, bool) {
+	for pos, point := range obj.cache {
+		if point == *hash {
+			return pos, true
+		}
+	}
+
+	return 0, false
+}
+
 // /	#############################################################################################	///
 
 /* Получение хеша по ID с кешированием */
@@ -99,6 +110,12 @@ func (obj *_historyFall_dbSHA) Search(hash *string) (uint64, bool) {
 
 	var id uint64
 	var status bool = true
+
+	//	Быстрый поиск по кешу ( может быть неоптимальною при большом выделении кеша)
+	id, status = obj.searchCache(hash)
+	if status {
+		return id, status
+	}
 
 	err := obj.globalObj.db.QueryRow("SELECT `id` FROM `database_hf_sha` WHERE `key` = ?", *hash).Scan(&id)
 	if err != nil {

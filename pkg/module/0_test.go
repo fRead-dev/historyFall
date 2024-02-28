@@ -132,12 +132,13 @@ func (obj testObj) databaseSHA() {
 	/**/
 
 	//	Проверка на поиск
-	SHAsearchID, SHAsearchStatus := obj.sql.SHA.Search(hashName)
+	SHAsearchID, SHAsearchStatus := obj.sql.SHA.Search(&hashName)
 	obj.testPoint(SHAsearchID != hashNameID, "SHAsearchID")
 	obj.testPoint(!SHAsearchStatus, "SHAsearchStatus")
 
 	//	Проверка на поиск NULL
-	SHAsearchNullID, SHAsearchNullStatus := obj.sql.SHA.Search(SHA1(faker.Paragraph()))
+	hashName = SHA1(faker.Paragraph())
+	SHAsearchNullID, SHAsearchNullStatus := obj.sql.SHA.Search(&hashName)
 	obj.testPoint(SHAsearchNullID != 0, "SHAsearchNullID")
 	obj.testPoint(SHAsearchNullStatus, "SHAsearchNullStatus")
 
