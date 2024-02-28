@@ -31,7 +31,7 @@ type database_hf_vectorInfo struct {
 
 // database_hf_vectorsData	Сами векторы
 type database_hf_vectorsData struct {
-	ID   database_hf_vectorInfo `database_name:"id" database_i:"pk notnull"`
+	Info database_hf_vectorInfo `database_name:"id" database_i:"pk notnull" database_fk:"database_hf_vectorInfo:id"`
 	DATA []byte                 `database_name:"data"`
 }
 
