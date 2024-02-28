@@ -21,8 +21,8 @@ func tempTest(log *zap.Logger) {
 	log.Info("Work from file")
 	dir := "./pkg/_temp/"
 
-	module.BBBBBBB(log)
-	return
+	//module.BBBBBBB(log)
+	//return
 
 	hfObj := module.Init(log, dir)
 	defer hfObj.Close()
