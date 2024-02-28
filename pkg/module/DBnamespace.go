@@ -68,7 +68,7 @@ type database_hf_timelineComments struct {
 //	#####################################################################################	//
 
 // Синсхронизация структуры таблицы
-func database_Sync(db *sql.DB, log *zap.Logger) {
+func database_Sync(db *sql.DB, log *zap.Logger, autoFix bool) {
 	tableArr := []interface{}{
 		database_hf_info{},
 		database_hf_sha{},
@@ -77,6 +77,7 @@ func database_Sync(db *sql.DB, log *zap.Logger) {
 		database_hf_timeline{},
 		database_hf_timelineComments{},
 	}
+	isOk := true
 
 	for _, st := range tableArr {
 		createTable := false                              //	Тригер на инициализацию таблицы
@@ -104,6 +105,14 @@ func database_Sync(db *sql.DB, log *zap.Logger) {
 
 		//.//
 
+		if !autoFix {
+			if delTable || createTable {
+				isOk = false
+				log.Info("Problem in database", zap.String("table", tableName))
+				continue
+			}
+		}
+
 		if delTable {
 			_, err = db.Exec("DROP TABLE IF EXISTS `" + tableName + "`")
 			if err != nil {
@@ -122,6 +131,11 @@ func database_Sync(db *sql.DB, log *zap.Logger) {
 				log.Debug("CREATE TABLE", zap.String("table", tableName), zap.String("tableSql", tableSql))
 			}
 		}
+	}
+
+	//	Обработчик для нестрогой проверки
+	if !isOk && !autoFix {
+		log.Fatal("Error database initialization")
 	}
 
 }

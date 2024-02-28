@@ -148,3 +148,5 @@ func databaseGenerateSQLiteFromStruct(s *interface{}) string {
 	create += " )"
 	return create
 }
+
+// ################################################################################	//
