@@ -102,7 +102,7 @@ func databaseGenerateSQLiteIndexesFromStruct(s *interface{}) string {
 
 	// Добавляем индекс в буфер отдачи
 	for _, index := range indexes {
-		str += "CREATE INDEX IF NOT EXISTS `" + SHA1(tamleName + strings.Join(indexes, ":"))[:6] + "` ON " + tamleName + "(" + index + ");"
+		str += "CREATE INDEX IF NOT EXISTS `" + SHA1(tamleName + strings.Join(indexes, ":") + index)[:6] + "` ON " + tamleName + "(" + index + ");"
 	}
 
 	return str
