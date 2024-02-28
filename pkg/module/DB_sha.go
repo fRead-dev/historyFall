@@ -37,6 +37,10 @@ func (obj *_historyFall_dbSHA) SetCacheLimit(limit uint16) {
 
 // addCache добаваление хеша в кеш
 func (obj *_historyFall_dbSHA) addCache(id uint64, hash string) {
+	if obj.cache == nil {
+		return
+	}
+
 	if uint16(len(obj.cacheKeys)) == obj.cacheLimit {
 		delete(obj.cache, obj.cacheKeys[0]) // Если кеш заполнен, удаляем элемент с наименьшим индексом
 		obj.cacheKeys = obj.cacheKeys[1:]
@@ -48,12 +52,20 @@ func (obj *_historyFall_dbSHA) addCache(id uint64, hash string) {
 
 // getCache Поиск значения в кеше
 func (obj *_historyFall_dbSHA) getCache(id uint64) (string, bool) {
+	if obj.cache == nil {
+		return "", false
+	}
+
 	value, status := obj.cache[id]
 	return value, status
 }
 
 // searchCache Поиск по кешированным результат перебором
 func (obj *_historyFall_dbSHA) searchCache(hash *string) (uint64, bool) {
+	if obj.cache == nil {
+		return 0, false
+	}
+
 	for pos, point := range obj.cache {
 		if point == *hash {
 			return pos, true
