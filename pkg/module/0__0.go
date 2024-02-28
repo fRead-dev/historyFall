@@ -12,16 +12,23 @@ import (
 )
 
 type __TEST__globalObj struct {
-	log        *zap.Logger
+	log *zap.Logger
+	t   *testing.T
+
 	__fileList []string
 }
 
 // zap.DebugLevel | zap.InfoLevel | zap.WarnLevel | zap.ErrorLevel
-func __TEST__Init(t *testing.T, enab zapcore.LevelEnabler) __TEST__globalObj {
+func __TEST__Init(t *testing.T, enab zapcore.LevelEnabler, name string) __TEST__globalObj {
 	obj := __TEST__globalObj{}
-	obj.log = zaptest.NewLogger(t, zaptest.Level(enab))
+	obj.log = zaptest.NewLogger(
+		t,
+		zaptest.Level(enab),
+	)
+	obj.t = t
 	return obj
 }
+
 func (obj *__TEST__globalObj) generateText(paragraphs uint16) string {
 	srt := ""
 	for i := uint16(0); i < paragraphs; i++ {
@@ -58,6 +65,25 @@ func (obj *__TEST__globalObj) Close() {
 	//	Удаление всех временных файлов
 	for _, file := range obj.__fileList {
 		os.Remove(file)
+	}
+}
+
+// fail Проверка на ошибку автоматическая
+func (obj *__TEST__globalObj) fail(isFail bool, args ...any) {
+	var bufVals []string
+	name := args[0].(string)
+
+	for pos, element := range args {
+		if pos > 0 {
+			bufVals = append(bufVals, zap.Any(string(rune(pos)), element).String)
+		}
+	}
+
+	if isFail {
+		obj.log.DPanic("INVALID: "+name, zap.Any("", bufVals))
+		obj.t.Fail()
+	} else {
+		obj.log.Debug("VALID: "+name, zap.Any("", bufVals))
 	}
 }
 
