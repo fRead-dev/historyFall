@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"go.uber.org/zap"
+	"time"
 )
 
 // /	#############################################################################################	///
@@ -62,6 +63,46 @@ func (obj *_historyFall_dbFile) AutoloadCache() {
 		}
 		rows.Close()
 	}
+}
+
+// updVector Обновление Записи файла
+func (obj *_historyFall_dbFile) updVector(id uint32, isDel bool, beginVectorID uint32) {
+	if id < 1 {
+		return
+	}
+
+	tx := obj.globalObj.beginTransaction("File:upd")
+	currentTime := time.Now().UTC().Unix()
+
+	tx.Exec(
+		"UPDATE `database_hf_pkg` SET `time` = ?, `isDel`=?, `begin`=? WHERE `id` = ?;",
+		currentTime,
+		isDel,
+		beginVectorID,
+		id,
+	)
+	tx.End()
+}
+
+// add строгое добавление файла с возможностью задать статус (только для внутреннего использования)
+func (obj *_historyFall_dbFile) add(fileName *string, isDel bool, beginVectorID uint32) uint32 {
+	if len(*fileName) < 2 {
+		return 0
+	}
+
+	tx := obj.globalObj.beginTransaction("File:add")
+	currentTime := time.Now().UTC().Unix()
+
+	tx.Exec(
+		"INSERT INTO `database_hf_pkg` (`key`, `isDel`, `time`, `begin`) VALUES (?, ?, ?, ?);",
+		*fileName,
+		isDel,
+		currentTime,
+		beginVectorID,
+	)
+	tx.End()
+
+	return 0
 }
 
 // /	#############################################################################################	///
@@ -127,4 +168,52 @@ func (obj *_historyFall_dbFile) Search(fileName *string) (uint32, bool) {
 	}
 
 	return retID, status
+}
+
+/* Добавление нового файла (Если есть совпадение то вернет указатель на него, обновив) */
+func (obj *_historyFall_dbFile) Add(fileName *string, beginVectorID uint32) uint32 {
+	if len(*fileName) < 2 {
+		return 0
+	}
+
+	//	Отсечение если такого вектора нет
+	_, status := obj.globalObj.Vector.getInfo(beginVectorID)
+	if !status {
+		return 0
+	}
+
+	//	Поиск такого по базе
+	id, status := obj.Search(fileName)
+	if status {
+		pcg, _ := obj.Get(id) //	Загрузка полной инфы по файлу
+
+		if pcg.Begin.ID != beginVectorID {
+			name := (*fileName) + ".old"
+			obj.add(&name, true, pcg.Begin.ID)      //	Создание новой записи для сохранения истории дубля
+			obj.updVector(id, false, beginVectorID) //	Изменение текущей записи
+		}
+
+		return id
+	}
+
+	//	Добавление новой записи
+	return obj.add(fileName, false, beginVectorID)
+}
+
+/*	Изменить статус файла	*/
+func (obj *_historyFall_dbFile) UpdIsDel(id uint32, isDel bool) {
+	if id < 1 {
+		return
+	}
+
+	tx := obj.globalObj.beginTransaction("File:UpdIsDel")
+	currentTime := time.Now().UTC().Unix()
+
+	tx.Exec(
+		"UPDATE `database_hf_pkg` SET `time` = ?, `isDel`=? WHERE `id` = ?;",
+		currentTime,
+		isDel,
+		id,
+	)
+	tx.End()
 }
