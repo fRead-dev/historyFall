@@ -19,7 +19,7 @@ type __TEST__globalObj struct {
 }
 
 // zap.DebugLevel | zap.InfoLevel | zap.WarnLevel | zap.ErrorLevel
-func __TEST__Init(t *testing.T, enab zapcore.LevelEnabler, name string) __TEST__globalObj {
+func __TEST__Init(t *testing.T, enab zapcore.LevelEnabler) __TEST__globalObj {
 	obj := __TEST__globalObj{}
 	obj.log = zaptest.NewLogger(
 		t,
@@ -85,6 +85,16 @@ func (obj *__TEST__globalObj) fail(isFail bool, args ...any) {
 	} else {
 		obj.log.Debug("VALID: "+name, zap.Any("", bufVals))
 	}
+}
+
+func (obj *__TEST__globalObj) pI(text string, fields ...zap.Field) {
+	obj.log.Info(text, fields...)
+}
+func (obj *__TEST__globalObj) pD(text string, fields ...zap.Field) {
+	obj.log.Debug(text, fields...)
+}
+func (obj *__TEST__globalObj) pE(text string, fields ...zap.Field) {
+	obj.log.Error(text, fields...)
 }
 
 //#################################################################################################################################//

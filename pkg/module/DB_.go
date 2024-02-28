@@ -35,20 +35,20 @@ func initDB(log *zap.Logger, dir string, name string, autoFix bool) localSQLiteO
 	var dbFilePath string = ""
 	fileName := ValidFileName(name, 40)
 
-	//	Проверка имени файла на соотвествие ожидаемого
-	if !IsValidFileType(fileName, constHistoryFallExtensions) {
-		if autoFix {
-			fileName += "." + constHistoryFallExtensions[0]
-		} else {
-			log.Fatal("File extension not supported!")
-		}
-	}
-
 	//Генерация пути к базе с учетом тестирования
 	if dir == "__TEST__" {
 		dbFilePath = ":memory:"
 	} else {
-		dbFilePath = dir + "/" + ValidFileName(name, 40) + ".hf"
+		dbFilePath = dir + "/" + fileName
+
+		//	Проверка имени файла на соотвествие ожидаемого
+		if !IsValidFileType(fileName, constHistoryFallExtensions) {
+			if autoFix {
+				fileName += "." + constHistoryFallExtensions[0]
+			} else {
+				log.Fatal("File extension not supported!")
+			}
+		}
 	}
 	log.Debug("DB", zap.String("path", dbFilePath))
 
