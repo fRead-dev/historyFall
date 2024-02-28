@@ -8,13 +8,13 @@ import (
 
 /* Таблица хранения данных формата ключ:значение */
 type database_hf_info struct {
-	NAME string `database_i:"pk notnull" database_name:"name"`
+	NAME string `database_name:"name" database_i:"pk notnull"`
 	DATA []byte `database_name:"data"`
 }
 
 /* Хранилище хещ-сумм */
 type database_hf_sha struct {
-	ID  uint64 `database_i:"pk ai notnull" database_name:"id"`
+	ID  uint64 `database_name:"id" database_i:"pk ai notnull"`
 	KEY string `database_name:"key"`
 }
 
@@ -22,7 +22,7 @@ type database_hf_sha struct {
 
 /* Информация о векторах изменения */
 type database_hf_vectorInfo struct {
-	ID     uint32 `database_i:"pk ai notnull" database_name:"id"`
+	ID     uint32 `database_name:"id" database_i:"pk ai notnull" `
 	Resize int64  `database_name:"resize"` //	Изменение в размере между версиями
 
 	Old database_hf_sha `database_name:"old" database_fk:"database_hf_sha:id"` //	хеш-сумма старого файла
@@ -31,7 +31,7 @@ type database_hf_vectorInfo struct {
 
 // database_hf_vectorsData	Сами векторы
 type database_hf_vectorsData struct {
-	ID   database_hf_vectorInfo `database_i:"pk notnull" database_name:"id"`
+	ID   database_hf_vectorInfo `database_name:"id" database_i:"pk notnull"`
 	DATA []byte                 `database_name:"data"`
 }
 
@@ -39,8 +39,8 @@ type database_hf_vectorsData struct {
 
 /* Описание файлов в директории */
 type database_hf_pkg struct {
-	ID    uint32 `database_i:"pk ai notnull" database_name:"id"`
-	KEY   string `database_i:"notnull" database_name:"key"` //	Название файла
+	ID    uint32 `database_name:"id" database_i:"pk ai notnull"`
+	KEY   string `database_name:"key" database_i:"notnull"` //	Название файла
 	IsDel bool   `database_name:"isDel"`                    //	Этот файл был удален?
 	Time  uint64 `database_name:"time"`                     //	Последнее обновление данных по файлу
 
@@ -51,7 +51,7 @@ type database_hf_pkg struct {
 
 /* История изменений */
 type database_hf_timeline struct {
-	ID   uint32 `database_i:"pk ai notnull" database_name:"id"`
+	ID   uint32 `database_name:"id" database_i:"pk ai notnull"`
 	Ver  uint32 `database_name:"ver"`  //	Минорная версия
 	Time uint64 `database_name:"time"` //	Время создания точки
 
@@ -61,8 +61,8 @@ type database_hf_timeline struct {
 
 // database_hf_timelineComments	Коментарии к изменению если есть
 type database_hf_timelineComments struct {
-	ID   database_hf_timeline `database_i:"pk notnull" database_name:"id" database_fk:"database_hf_timeline:id"`
-	DATA []byte               `database_name:"resize"`
+	ID   uint32 `database_name:"id" database_i:"pk notnull" database_fk:"database_hf_timeline:id"`
+	DATA []byte `database_name:"data"`
 }
 
 //	#####################################################################################	//
