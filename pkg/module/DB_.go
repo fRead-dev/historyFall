@@ -57,7 +57,13 @@ func initDB(log *zap.Logger, dir string, name string, autoFix bool) localSQLiteO
 	if err != nil {
 		log.Panic("Break open DB-sqlite3", zap.Error(err))
 	}
-	log.Info("DB connected")
+
+	//	Финальная перекрестная проверка
+	if db.Ping() != nil {
+		log.Panic("Error when checking the connection to the database")
+	} else {
+		log.Info("DB connected")
+	}
 
 	//	Инициализация переменных
 	obj := localSQLiteObj{}
@@ -76,12 +82,17 @@ func initDB(log *zap.Logger, dir string, name string, autoFix bool) localSQLiteO
 
 	obj.SHA.SetCacheLimit(100)
 
-	//	Синхронизация таблиц с паттерном
-	status := obj.Sync(autoFix)
-
-	//	Переинициализация основных переменных
-	if !status {
-		obj.initValues()
+	//	Проверка целостности структуры базы данных
+	if !obj.DatabaseValidation() {
+		if autoFix {
+			status := obj.Sync(autoFix) //	Синхронизация таблиц с паттерном
+			if !status {
+				obj.initValues() //	Переинициализация основных переменных
+			}
+		} else {
+			obj.log.Error("An error was encountered while checking the database structure")
+			obj.Close()
+		}
 	}
 
 	return obj
@@ -92,8 +103,36 @@ func (obj localSQLiteObj) Sync(autoFix bool) bool {
 	return database_Sync(obj.db, obj.log, autoFix)
 }
 
+/* Проверка структуры базы на соответствие */
+func (obj localSQLiteObj) DatabaseValidation() bool {
+	hashStruct := database_GetHashStruct()
+	hashBase := database_GetBaseStruct(obj.db)
+
+	for name, hash := range hashStruct {
+		value, status := hashBase[name]
+		if !status {
+			return false
+		}
+		if value != hash {
+			return false
+		}
+	}
+
+	return true
+}
+
 /*	Закрытие всех сессий в рамках базы	*/
-func (obj localSQLiteObj) Close() { obj.db.Close() }
+func (obj localSQLiteObj) Close() {
+	if obj.Enable() {
+		obj.log.Debug("DB Close...")
+		obj.db.Close()
+	}
+}
+
+/* Проверка на доступность базы */
+func (obj localSQLiteObj) Enable() bool {
+	return obj.db.Ping() == nil
+}
 
 ///	#############################################################################################	///
 
