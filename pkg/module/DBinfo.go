@@ -43,9 +43,6 @@ type _historyFall_dbVersion struct {
 	globalObj *localSQLiteObj
 
 	ver string //	Версия используемой структуры
-
-	Get func() string
-	Set func(string)
 }
 
 /*	Версия инициализированый сборки	*/
