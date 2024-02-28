@@ -6,9 +6,13 @@ import (
 	"testing"
 )
 
-func Test(t *testing.T) {
-	test := __TEST__Init(t, zap.DebugLevel, "TEST NAME OLOLOL")
+func Test_initDB(t *testing.T) {
+	test := __TEST__Init(t, zap.DebugLevel)
+	defer test.Close()
 
-	test.fail(true, "true")
-	test.fail(false, "false")
+	db := initDB(test.log, "__TEST__", "", false)
+	defer db.Close()
+
+	obj := __TEST__initDB_globalObj(&db, &test)
+	defer obj.Close()
 }

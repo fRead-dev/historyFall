@@ -69,9 +69,9 @@ type database_hf_timelineComments struct {
 
 //	#####################################################################################	//
 
-// Синсхронизация структуры таблицы
-func database_Sync(db *sql.DB, log *zap.Logger, autoFix bool) bool {
-	tableArr := []interface{}{
+// Получение массива структуры базы
+func database_Array() []interface{} {
+	return []interface{}{
 		database_hf_info{},
 		database_hf_sha{},
 		database_hf_vectorInfo{},
@@ -80,6 +80,11 @@ func database_Sync(db *sql.DB, log *zap.Logger, autoFix bool) bool {
 		database_hf_timeline{},
 		database_hf_timelineComments{},
 	}
+}
+
+// Синсхронизация структуры таблицы
+func database_Sync(db *sql.DB, log *zap.Logger, autoFix bool) bool {
+	tableArr := database_Array()
 	isOk := true
 
 	for _, st := range tableArr {
@@ -150,4 +155,41 @@ func database_Sync(db *sql.DB, log *zap.Logger, autoFix bool) bool {
 	}
 
 	return isOk
+}
+
+// Генерация по структуре ORM	|	Массив формата {название таблицы}:{SHA1(sql struct)}
+func database_GetHashStruct() map[string]string {
+	var arrHash map[string]string
+	arrHash = make(map[string]string)
+
+	tableArr := database_Array()
+	for _, st := range tableArr {
+		tableName := databaseGetName(&st)                 //	Название таблицы
+		tableSql := databaseGenerateSQLiteFromStruct(&st) //	Правильная структура таблицы
+		arrHash[tableName] = SHA1(tableSql)
+	}
+
+	return arrHash
+}
+
+// Генерация по инициализированой базе	|	Массив формата {название таблицы}:{SHA1(sql struct)}
+func database_GetBaseStruct(db *sql.DB) map[string]string {
+	var arrHash map[string]string
+	arrHash = make(map[string]string)
+
+	tableArr := database_Array()
+	for _, st := range tableArr {
+		tableName := databaseGetName(&st) //	Название таблицы
+		sqlStr := ""                      //	Буфер для структуры из базы
+
+		//Поиск таблицы среди существующих в БД
+		err := db.QueryRow("SELECT `sql` FROM `sqlite_master` WHERE `type`='table' AND `name`=?", tableName).Scan(&sqlStr)
+		if err == nil {
+			sqlStr = SHA1(sqlStr)
+		}
+
+		arrHash[tableName] = SHA1(sqlStr)
+	}
+
+	return arrHash
 }
