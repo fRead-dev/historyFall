@@ -56,7 +56,9 @@ type database_hf_timeline struct {
 	Time uint64 `database_name:"time"` //	Время создания точки
 
 	File   database_hf_pkg        `database_name:"file" database_fk:"database_hf_pkg:id"`          //	К какому файлу относится
-	Vector database_hf_vectorInfo `database_name:"vector" database_fk:"database_hf_vectorInfo:id"` //	Вектор изменения
+	Vector database_hf_vectorInfo `database_name:"vector" database_fk:"database_hf_vectorInfo:id"` //	Вектор
+
+	Comment *[]byte //	Указатель на комментарий если он есть
 }
 
 // database_hf_timelineComments	Коментарии к изменению если есть
