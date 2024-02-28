@@ -113,13 +113,15 @@ func (obj *_historyFall_dbTimeline) SearchTime(fileID uint32, beginTimestamp uin
 		return []uint32{}
 	}
 	if beginTimestamp <= endTimestamp {
-		return []uint32{}
+		endTimestamp = 9999999999999999999
 	}
 
 	//	Загружаем все совпаения
 	return obj.getSearchSQL(
-		"SELECT `id` FROM `database_hf_timeline` WHERE `file`=? ORDER BY `ver` ASC",
+		"SELECT `id` FROM `database_hf_timeline` WHERE `file`=? AND `time`>? AND `time`<? ORDER BY `ver` ASC",
 		fileID,
+		beginTimestamp,
+		endTimestamp,
 	)
 }
 
@@ -133,18 +135,5 @@ func (obj *_historyFall_dbTimeline) SearchVector(vectorID uint32) []uint32 {
 	return obj.getSearchSQL(
 		"SELECT `id` FROM `database_hf_timeline` WHERE `vector`=? ORDER BY `ver` ASC",
 		vectorID,
-	)
-}
-
-/* Получение списка точек у которых коментарий содержит фрагмент строки */
-func (obj *_historyFall_dbTimeline) SearchComments(textSearch string) []uint32 {
-	if len(textSearch) < 1 {
-		return []uint32{}
-	}
-
-	//	Загружаем все совпаения
-	return obj.getSearchSQL(
-		"SELECT `id` FROM `database_hf_timeline` WHERE `file`=? ORDER BY `ver` ASC",
-		textSearch,
 	)
 }
