@@ -98,7 +98,6 @@ func database_Sync(db *sql.DB, log *zap.Logger) {
 		//	Обработка если таблицы не одинаковы
 		if !createTable {
 			if tableSql != sqlStr {
-				log.Info(tableName, zap.Any(" tableSql", (tableSql)), zap.Any(" sqlStr", (sqlStr)))
 				delTable = true
 			}
 		}
@@ -106,7 +105,7 @@ func database_Sync(db *sql.DB, log *zap.Logger) {
 		//.//
 
 		if delTable {
-			_, err = db.Exec("DROP TABLE IF EXISTS ?", tableName)
+			_, err = db.Exec("DROP TABLE IF EXISTS `" + tableName + "`")
 			if err != nil {
 				log.Error("Break DROP TABLE", zap.String("table", tableName), zap.Error(err))
 			} else {
@@ -118,7 +117,7 @@ func database_Sync(db *sql.DB, log *zap.Logger) {
 		if createTable {
 			_, err = db.Exec(tableSql)
 			if err != nil {
-				log.Panic("Break CREATE TABLE", zap.String("table", tableName), zap.String("tableSql", tableSql), zap.Error(err))
+				log.Panic("Break CREATE TABLE", zap.String("table", tableName), zap.Error(err))
 			} else {
 				log.Debug("CREATE TABLE", zap.String("table", tableName), zap.String("tableSql", tableSql))
 			}
