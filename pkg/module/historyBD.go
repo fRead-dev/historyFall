@@ -99,6 +99,10 @@ func initDB(log *zap.Logger, dir string, name string) localSQLiteObj {
 	obj.log.Info("DB connected")
 	obj.db = db
 
+	//	Синхронизация таблиц с паттерном
+	database_Sync(db, log)
+	log.Panic("END")
+
 	//	проверка на существование и инициализация в противном случае
 	if !obj.existsTable("info") {
 		obj.initTables()

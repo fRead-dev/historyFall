@@ -1,8 +1,6 @@
 package module
 
 import (
-	"fmt"
-	"go.uber.org/zap"
 	"reflect"
 	"strings"
 )
@@ -32,27 +30,20 @@ func __database_valueTypeSQLite(value *reflect.Value) string {
 }
 
 // ################################################################################	//
-type testGtr struct {
-	Id  uint32
-	Dar string `database_name:"dar"`
-}
 
-type testStruct struct {
-	Name     int32 `database_i:"pk ai notnull fucknull" database_name:"name" database_fk:"table:colum"`
-	UU       int32
-	Value    []byte
-	Test     *testGtr
-	TestFull testGtr `database_fk:"testGtr:dar"`
+/* Получить название структуры строкой */
+func databaseGetName(s *interface{}) string {
+	return reflect.TypeOf(*s).Name()
 }
 
 /* Генерация CREATE TABLE по структуре	(ссылки не учитываются) */
-func databaseGenerateSQLiteFromStruct(s interface{}) string {
+func databaseGenerateSQLiteFromStruct(s *interface{}) string {
 	create := "CREATE TABLE IF NOT EXISTS "
-	create += "`" + reflect.TypeOf(s).Name() + "`"
+	create += "`" + databaseGetName(s) + "`"
 	create += " ( "
 
-	refT := reflect.TypeOf(s)
-	refV := reflect.ValueOf(s)
+	refT := reflect.TypeOf(*s)
+	refV := reflect.ValueOf(*s)
 	size := refT.NumField()
 
 	//	Перебор всех полей структуры
@@ -70,8 +61,6 @@ func databaseGenerateSQLiteFromStruct(s interface{}) string {
 		name := field.Name
 		types := __database_valueTypeSQLite(&val)
 		other := ""
-
-		fmt.Printf("%s:: %s : %s \n", name, types, val.String())
 
 		//.//
 
@@ -129,46 +118,4 @@ func databaseGenerateSQLiteFromStruct(s interface{}) string {
 
 	create += " );"
 	return create
-}
-
-func BBBBBBB(log *zap.Logger) {
-
-	log.Info(databaseGenerateSQLiteFromStruct(testGtr{}))
-	log.Info(databaseGenerateSQLiteFromStruct(testStruct{}))
-	return
-
-	// Получение типа структуры
-	userType := reflect.TypeOf(testStruct{})
-
-	// Итерация по полям структуры
-	for i := 0; i < userType.NumField(); i++ {
-		field := userType.Field(i)
-		//value := reflect.ValueOf(userType).Field(i)
-
-		// Получение имени поля
-		fieldName := field.Name
-
-		// Получение аннотаций (тегов) поля
-		jsonTag := field.Tag.Get("db_1")
-		dbTag := field.Tag.Get("db_2")
-
-		// Получение типа
-		fieldType := field.Type
-
-		switch field.Type.Kind() {
-		case reflect.Struct:
-			kk := field.Type.Field(0)
-			fmt.Printf("Структура '%s' \n", kk.Type)
-			break
-
-		case reflect.Ptr:
-			fmt.Printf("ссылка на структуру \n")
-			break
-
-		default:
-			fmt.Printf("Поле: %s\n\tТип: %s\n\t байт\n\tJSON тег: %s\n\tDB тег: %s\n", fieldName, fieldType, jsonTag, dbTag)
-			break
-		}
-	}
-
 }

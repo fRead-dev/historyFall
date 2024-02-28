@@ -1,6 +1,11 @@
 package module
 
-import "time"
+import (
+	"database/sql"
+	"errors"
+	"go.uber.org/zap"
+	"time"
+)
 
 /* Таблица хранения данных формата ключ:значение */
 type database_hf_info struct {
@@ -55,8 +60,8 @@ type database_hf_timeline struct {
 	Vector database_hf_vectorInfo `xorm:"index 'vector'"`
 }
 
-// database_hv_timelineComments	Коментарии к изменению если есть
-type database_hv_timelineComments struct {
+// database_hf_timelineComments	Коментарии к изменению если есть
+type database_hf_timelineComments struct {
 	ID   database_hf_timeline `xorm:"pk index 'id'"`
 	DATA []byte               `xorm:"'data'"`
 }
@@ -64,6 +69,50 @@ type database_hv_timelineComments struct {
 //	#####################################################################################	//
 
 // Синсхронизация структуры таблицы
-func database_Sync() {
+func database_Sync(db *sql.DB, log *zap.Logger) {
+	tableArr := []interface{}{
+		database_hf_info{},
+		database_hf_sha{},
+		database_hf_vectorInfo{},
+		database_hf_vectorsData{},
+		database_hf_timeline{},
+		database_hf_timelineComments{},
+	}
+
+	for _, st := range tableArr {
+		createTable := false                              //	Тригер на инициализацию таблицы
+		delTable := false                                 //	Тригер на удаление существующей таблицы
+		var sqlStr string = ""                            //	Структура таблицы для сравнения
+		tableName := databaseGetName(&st)                 //	Название таблицы
+		tableSql := databaseGenerateSQLiteFromStruct(&st) //	Правильная структура таблицы
+
+		//Поиск таблицы среди существующих в БД
+		err := db.QueryRow("SELECT `sql` FROM `sqlite_master` WHERE `type`='table' AND `name`=?", tableName).Scan(&sqlStr)
+		if err != nil {
+			if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
+				log.Panic("A critical error occurred while checking the database", zap.String("table", tableName), zap.Error(err))
+			} else {
+				createTable = true
+			}
+		}
+
+		//	Обработка если таблицы не одинаковы
+		if !createTable {
+			if tableSql != sqlStr {
+				delTable = true
+			}
+		}
+
+		//.//
+
+		if delTable {
+			log.Debug("Удаляем талицу", zap.String("table", tableName))
+			createTable = true
+		}
+
+		if createTable {
+			log.Debug("Создаем таблицу", zap.String("table", tableName))
+		}
+	}
 
 }
