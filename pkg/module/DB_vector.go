@@ -81,40 +81,15 @@ func (obj *_historyFall_dbVector) Get(id uint32) (database_hf_vectorsData, bool)
 	return retObj, status
 }
 
-/* Поиск векторов по хешу  | Return( []OLD, []NEW )*/
-func (obj *_historyFall_dbVector) Search(hash *string) ([]uint32, []uint32) {
-	var oldArr []uint32
-	var newArr []uint32
+/* Получить Resize по ID */
+func (obj *_historyFall_dbVector) GetResize(id uint32) int64 {
+	retObj, status := obj.getInfo(id)
 
-	//	Ищем указатель хеша и откидываем если не найден
-	hashID, status := obj.globalObj.SHA.Search(hash)
 	if !status {
-		return oldArr, newArr
+		return 0
 	}
 
-	//	Загружаем все совпаения по OLD
-	rows, err := obj.globalObj.db.Query("SELECT `id` FROM `database_hf_vectorInfo` WHERE `old`=?", hashID)
-	if err == nil {
-		for rows.Next() {
-			var bufID uint32
-			rows.Scan(&bufID)
-			oldArr = append(oldArr, bufID)
-		}
-	}
-	rows.Close()
-
-	//	Загружаем все совпаения по NEW
-	rows, err = obj.globalObj.db.Query("SELECT `id` FROM `database_hf_vectorInfo` WHERE `new`=?", hashID)
-	if err == nil {
-		for rows.Next() {
-			var bufID uint32
-			rows.Scan(&bufID)
-			newArr = append(newArr, bufID)
-		}
-	}
-	rows.Close()
-
-	return oldArr, newArr
+	return retObj.Resize
 }
 
 /* Добавление нового вектора (Если есть совпадение то вернет указатель на него) */
@@ -148,4 +123,76 @@ func (obj *_historyFall_dbVector) Add(data *[]byte, hashOld *string, hashNew *st
 	tx.End()
 
 	return uint32(lastInsertID)
+}
+
+//##//
+
+/* Поиск векторов по хешу  | Return( []OLD, []NEW )*/
+func (obj *_historyFall_dbVector) Search(hash *string, limit uint16) ([]uint32, []uint32) {
+	var oldArr []uint32
+	var newArr []uint32
+
+	if limit < 1 {
+		return oldArr, newArr
+	}
+
+	//	Ищем указатель хеша и откидываем если не найден
+	hashID, status := obj.globalObj.SHA.Search(hash)
+	if !status {
+		return oldArr, newArr
+	}
+
+	//	Загружаем все совпаения по OLD
+	rows, err := obj.globalObj.db.Query(
+		"SELECT `id` FROM `database_hf_vectorInfo` WHERE `old`=? ORDER BY `id` ASC LIMIT ?",
+		hashID,
+		limit,
+	)
+	if err == nil {
+		for rows.Next() {
+			var bufID uint32
+			rows.Scan(&bufID)
+			oldArr = append(oldArr, bufID)
+		}
+	}
+	rows.Close()
+
+	//	Загружаем все совпаения по NEW
+	rows, err = obj.globalObj.db.Query(
+		"SELECT `id` FROM `database_hf_vectorInfo` WHERE `new`=? ORDER BY `id` ASC LIMIT ?",
+		hashID,
+		limit,
+	)
+	if err == nil {
+		for rows.Next() {
+			var bufID uint32
+			rows.Scan(&bufID)
+			newArr = append(newArr, bufID)
+		}
+	}
+	rows.Close()
+
+	return oldArr, newArr
+}
+
+/* Получение последнего указателя на вектор по OLD-хешу */
+func (obj *_historyFall_dbVector) SearchLastOld(hash *string) (uint32, bool) {
+	oldArr, _ := obj.Search(hash, 1)
+
+	if len(oldArr) > 0 {
+		return oldArr[0], true
+	}
+
+	return 0, false
+}
+
+/* Получение последнего указателя на вектор по NEW-хешу */
+func (obj *_historyFall_dbVector) SearchLastNew(hash *string) (uint32, bool) {
+	_, newArr := obj.Search(hash, 1)
+
+	if len(newArr) > 0 {
+		return newArr[0], true
+	}
+
+	return 0, false
 }
