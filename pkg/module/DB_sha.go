@@ -120,7 +120,7 @@ func (obj *_historyFall_dbSHA) Search(hash string) (uint64, bool) {
 	return id, status
 }
 
-/* Добавление новог ключа */
+/* Добавление новогo ключа */
 func (obj *_historyFall_dbSHA) Add(hash string) uint64 {
 	id, status := obj.Search(hash)
 
@@ -131,7 +131,7 @@ func (obj *_historyFall_dbSHA) Add(hash string) uint64 {
 
 	tx := obj.globalObj.beginTransaction("SHA:Add")
 
-	result := tx.ExecValue("INSERT INTO `database_hf_sha` (`key`) VALUES (?)", hash)
+	result := tx.Exec("INSERT INTO `database_hf_sha` (`key`) VALUES (?)", hash)
 	tx.End()
 
 	lastInsertID, _ := result.LastInsertId()
@@ -139,4 +139,14 @@ func (obj *_historyFall_dbSHA) Add(hash string) uint64 {
 
 	obj.addCache(retID, hash)
 	return retID
+}
+
+/* Добавление новогo ключа с возватом обьекта */
+func (obj *_historyFall_dbSHA) Set(hash string) database_hf_sha {
+	retObj := database_hf_sha{}
+
+	retObj.ID = obj.Add(hash)
+	retObj.KEY = hash
+
+	return retObj
 }
