@@ -4,66 +4,65 @@ import (
 	"database/sql"
 	"errors"
 	"go.uber.org/zap"
-	"time"
 )
 
 /* Таблица хранения данных формата ключ:значение */
 type database_hf_info struct {
-	NAME string `xorm:"pk 'name'"`
-	DATA []byte `xorm:"'data'"`
+	NAME string `database_i:"pk notnull" database_name:"name"`
+	DATA []byte `database_name:"data"`
 }
 
 /* Хранилище хещ-сумм */
 type database_hf_sha struct {
-	ID  uint64 `xorm:"pk autoincr 'id'"`
-	KEY string `xorm:"notnull unique 'key'"`
+	ID  uint64 `database_i:"pk ai notnull" database_name:"id"`
+	KEY string `database_name:"key"`
 }
 
 //.//
 
 /* Информация о векторах изменения */
 type database_hf_vectorInfo struct {
-	ID     uint32 `xorm:"pk autoincr 'id'"`
-	Resize int64  `xorm:"'resize'"`
+	ID     uint32 `database_i:"pk ai notnull" database_name:"id"`
+	Resize int64  `database_name:"resize"`
 
-	Old database_hf_sha `xorm:"index 'old'"`
-	New database_hf_sha `xorm:"index 'new'"`
+	Old database_hf_sha `database_name:"old" database_fk:"database_hf_sha:id"`
+	New database_hf_sha `database_name:"new" database_fk:"database_hf_sha:id"`
 }
 
 // database_hf_vectorsData	Сами векторы
 type database_hf_vectorsData struct {
-	ID   database_hf_vectorInfo `xorm:"pk index 'id'"`
-	DATA []byte                 `xorm:"'data'"`
+	ID   database_hf_vectorInfo `database_i:"pk notnull" database_name:"id"`
+	DATA []byte                 `database_name:"data"`
 }
 
 //.//
 
 /* Описание файлов в директории */
 type database_hf_pkg struct {
-	ID    uint32    `xorm:"pk autoincr 'id'"`
-	KEY   string    `xorm:"notnull unique 'key'"`
-	IsDel bool      `xorm:"'isDel'"`
-	Time  time.Time `xorm:"updated 'time'"`
+	ID    uint32 `database_i:"pk ai notnull" database_name:"id"`
+	KEY   string `database_i:"notnull" database_name:"key"`
+	IsDel bool   `database_name:"isDel"`
+	Time  uint64 `database_name:"time"`
 
-	Begin database_hf_vectorInfo `xorm:"index null 'begin'"`
+	Begin database_hf_vectorInfo `database_name:"begin" database_fk:"database_hf_vectorInfo:id"`
 }
 
 //.//
 
 /* История изменений */
 type database_hf_timeline struct {
-	ID   uint32    `xorm:"pk autoincr 'id'"`
-	Ver  uint32    `xorm:"'ver'"`
-	Time time.Time `xorm:"created 'time'"`
+	ID   uint32 `database_i:"pk ai notnull" database_name:"id"`
+	Ver  uint32 `database_name:"ver"`
+	Time uint64 `database_name:"time"`
 
-	File   database_hf_pkg        `xorm:"index 'file'"`
-	Vector database_hf_vectorInfo `xorm:"index 'vector'"`
+	File   database_hf_pkg        `database_name:"file" database_fk:"database_hf_pkg:id"`
+	Vector database_hf_vectorInfo `database_name:"vector" database_fk:"database_hf_vectorInfo:id"`
 }
 
 // database_hf_timelineComments	Коментарии к изменению если есть
 type database_hf_timelineComments struct {
-	ID   database_hf_timeline `xorm:"pk index 'id'"`
-	DATA []byte               `xorm:"'data'"`
+	ID   database_hf_timeline `database_i:"pk notnull" database_name:"id"`
+	DATA []byte               `database_name:"resize"`
 }
 
 //	#####################################################################################	//
