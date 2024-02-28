@@ -22,55 +22,6 @@ type localSQLiteObj struct {
 	log *zap.Logger
 }
 
-// обьект файла из базы
-type _historyFallFileObj struct {
-	id    uint32 //	уникальный указатель по базе
-	key   string //	Строчное название файла
-	isDel bool   //	Триггер существования
-	begin uint32 //	Начальный вектор. отношение формата NULL >> {Новый файл}
-}
-
-// обьект вектора из базы
-type _historyFallVectorObj struct {
-	id   uint32 //	уникальный указатель по базе
-	key  string //	формируемый ключ по формуле SHA1( old + new )
-	old  uint32 //	Указатель на сущность SHA старого файла
-	new  uint32 //	Указатель на сущность SHA нового файла
-	data []byte //
-}
-
-// обьект точки таймлайна из базы
-type _historyFallTimelineObj struct {
-	id     uint32 //	уникальный указатель по базе
-	ver    uint32 //	Версия точки, инкрементируется в ручном режиме от 0
-	file   uint32 //	Указатель на сущность FILE
-	vector uint32 //	Указатель на сущность VECTOR
-	time   uint32 //	Время создания точки
-}
-
-// полный вектор из базы
-type _historyFallVectorFullObj struct {
-	_historyFallVectorObj
-
-	old string //	SHA256-сумма старого файла
-	new string //	SHA256-сумма нового файла
-}
-
-// полный файл из базы
-type _historyFallFileFullObj struct {
-	_historyFallFileObj
-
-	begin _historyFallVectorFullObj
-}
-
-// полный таймлайн из базы
-type _historyFallTimelineFullObj struct {
-	_historyFallTimelineObj
-
-	file   _historyFallFileFullObj
-	vector _historyFallVectorFullObj
-}
-
 ///	#############################################################################################	///
 
 func initDB(log *zap.Logger, dir string, name string) localSQLiteObj {
@@ -100,12 +51,11 @@ func initDB(log *zap.Logger, dir string, name string) localSQLiteObj {
 	obj.db = db
 
 	//	Синхронизация таблиц с паттерном
-	database_Sync(db, log)
+	database_Sync(db, log, true)
 	log.Panic("END")
 
 	//	проверка на существование и инициализация в противном случае
 	if !obj.existsTable("info") {
-		obj.initTables()
 		obj.initValues()
 		obj.optimizationDB()
 	}
@@ -237,75 +187,9 @@ func (obj localSQLiteObj) autoCheck() {
 
 	//	Запуск инициализации
 	if startInit {
-		obj.initTables()
 		obj.initValues()
 		obj.optimizationDB()
 	}
-}
-
-// Инициализация всех таблиц и данных в них
-func (obj localSQLiteObj) initTables() {
-	obj.log.Info("Start initTables DB")
-
-	//	Предварительная очистка таблиц на случай если они есть
-	for _, name := range constTablesFromDB {
-		if obj.existsTable(name) {
-			_, err := obj.db.Exec("DROP TABLE IF EXISTS ?", name)
-			if err != nil {
-				obj.log.Panic("Break DROP Table", zap.String("table", name), zap.Error(err))
-			} else {
-				obj.log.Debug("DROP Table", zap.String("table", name))
-			}
-		}
-	}
-
-	obj.createTable(`
-		CREATE TABLE IF NOT EXISTS info (
-			name TEXT PRIMARY KEY,
-			data BLOB
-		)
-	`)
-
-	obj.createTable(`
-		CREATE TABLE IF NOT EXISTS sha (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            key TEXT
-		)
-	`)
-
-	obj.createTable(`
-		CREATE TABLE IF NOT EXISTS vectors (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            key TEXT NOT NULL,
-            oldID INTEGER,
-            newID INTEGER,
-            data BLOB,
-            CONSTRAINT vectors_oldID FOREIGN KEY(oldID) REFERENCES sha(id),
-		    CONSTRAINT vectors_newID FOREIGN KEY(newID) REFERENCES sha(id)
-		)
-	`)
-
-	obj.createTable(`
-		CREATE TABLE IF NOT EXISTS pkg (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            key TEXT NOT NULL,
-            isDel BOOLEAN NOT NULL,
-            beginID INTEGER,
-            CONSTRAINT files_beginID FOREIGN KEY(beginID) REFERENCES vectors(id)
-        )
-	`)
-
-	obj.createTable(`
-		CREATE TABLE IF NOT EXISTS timeline (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			ver INTEGER NOT NULL,
-			fileID INTEGER,
-			vectorID INTEGER,
-			time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			CONSTRAINT timeline_fileID FOREIGN KEY(fileID) REFERENCES pkg(id),
-		    CONSTRAINT timeline_vectorID FOREIGN KEY(vectorID) REFERENCES vectors(id)
-		)
-	`)
 }
 
 // Инициализация стартовых значений в таблице
@@ -314,8 +198,6 @@ func (obj localSQLiteObj) initValues() {
 
 	// Начало транзакции
 	tx := obj.BeginTransaction("initValues")
-
-	obj.ExecTransaction(tx, "DROP TABLE IF EXISTS example")
 
 	currentTime := time.Now().UTC().Unix()
 
@@ -421,6 +303,8 @@ func (obj localSQLiteObj) addSHA(key string) uint32 {
 }
 
 //.//
+
+/*
 
 // Поиск файла по названию
 func (obj localSQLiteObj) searchFile(fileName string) (_historyFallFileObj, bool) {
@@ -610,3 +494,6 @@ func (obj localSQLiteObj) searchTimeline(fileID uint32, version uint32) (_histor
 	timelinePoint := _historyFallTimelineObj{}
 	return timelinePoint, false
 }
+
+
+*/
