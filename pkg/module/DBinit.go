@@ -93,15 +93,34 @@ func databaseGenerateSQLiteFromStruct(s *interface{}) string {
 			foreignKeyVal := strings.Split(database_fk, ":")
 			if len(foreignKeyVal) == 2 { //	Только два ключа
 				if len(foreignKeyVal[0]) > 0 && len(foreignKeyVal[1]) > 0 { //	Оба не пустые
-					add = true
 
-					keyBuf := ""
-					keyBuf += "CONSTRAINT"
-					keyBuf += " `" + SHA1(name + "_" + foreignKeyVal[0] + "_" + foreignKeyVal[1])[:6] + "`"
-					keyBuf += " FOREIGN KEY(" + name + ")"
-					keyBuf += " REFERENCES " + foreignKeyVal[0] + "(" + foreignKeyVal[1] + ")"
+					//	Получение типа если это ссылка
+					if val.Kind() == reflect.Struct {
+						TT := reflect.TypeOf(val.Interface())
+						VV := reflect.ValueOf(val.Interface())
 
-					keys = append(keys, keyBuf)
+						for j := 0; j < VV.NumField(); j++ {
+							nn := TT.Field(j).Tag.Get("database_name") //	Получаем имя из разметки
+							if len(nn) < 2 {                           //	Если отсутсвует то получаем переменной
+								nn = TT.Field(j).Name
+							}
+							if nn == foreignKeyVal[1] { //	Если такая переменная реально есть то формируем связь
+								add = true
+								pp := VV.Field(j)
+								types = __database_valueTypeSQLite(&pp)
+							}
+						}
+					}
+
+					//	формирование  FOREIGN KEY
+					if add {
+						keyBuf := ""
+						keyBuf += "CONSTRAINT"
+						keyBuf += " `" + SHA1(name + "_" + foreignKeyVal[0] + "_" + foreignKeyVal[1])[:6] + "`"
+						keyBuf += " FOREIGN KEY(" + name + ")"
+						keyBuf += " REFERENCES " + foreignKeyVal[0] + "(" + foreignKeyVal[1] + ")"
+						keys = append(keys, keyBuf)
+					}
 				}
 			}
 		}
