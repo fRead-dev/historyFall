@@ -10,42 +10,47 @@ import (
 	"time"
 )
 
-// локальный обьект работы с базой
+/*	Главный обьект класса работы с базой	*/
 type localSQLiteObj struct {
+	db  *sql.DB
+	log *zap.Logger
+
 	name string //	Название директории за которую отвечает historyFall
 	dir  string //	полный путь к дериктории
 
-	ver            string   //	Версия используемой структуры
-	fileExtensions []string //	Допустимые расширения файлов
-
-	db  *sql.DB
-	log *zap.Logger
+	Extensions _historyFall_dbExtensions
+	Version    _historyFall_dbVersion
 }
 
 ///	#############################################################################################	///
 
 func initDB(log *zap.Logger, dir string, name string) localSQLiteObj {
 	log.Info("Init DB..")
-	obj := localSQLiteObj{}
 	var dbFilePath string = ""
-
-	obj.name = name
-	obj.dir = dir
-	obj.log = log
 
 	//Генерация пути к базе с учетом тестирования
 	if dir == "__TEST__" {
 		dbFilePath = ":memory:"
 	} else {
-		dbFilePath = obj.dir + "/" + ValidFileName(name, 40) + ".hf"
+		dbFilePath = dir + "/" + ValidFileName(name, 40) + ".hf"
 	}
-	obj.log.Debug("DB", zap.String("path", dbFilePath))
+	log.Debug("DB", zap.String("path", dbFilePath))
 
 	// Открываем или создаем файл базы данных SQLite
 	db, err := sql.Open("sqlite3", dbFilePath)
 	if err != nil {
-		obj.log.Panic("Break open DB-sqlite3", zap.Error(err))
+		log.Panic("Break open DB-sqlite3", zap.Error(err))
 	}
+
+	//	Инициализация переменных
+	obj := localSQLiteObj{}
+	obj.db = db
+	obj.log = log
+	obj.name = name
+	obj.dir = dir
+
+	obj.Extensions = _historyFall_dbExtensions{globalObj: &obj}
+	obj.Version = _historyFall_dbVersion{globalObj: &obj}
 
 	obj.log.Info("DB connected")
 	obj.db = db
@@ -57,10 +62,6 @@ func initDB(log *zap.Logger, dir string, name string) localSQLiteObj {
 	if !status {
 		obj.initValues()
 	}
-
-	//	Выгрузка локальных параметров с базы
-	obj.fileExtensions = obj.getExtensions()
-	obj.ver = obj.getVersion()
 
 	return obj
 }
@@ -76,63 +77,11 @@ func (obj localSQLiteObj) optimizationDB() {
 	}
 }
 
-//.
+///	#############################################################################################	///
 
-func (obj localSQLiteObj) getVersion() string {
-	var version string
-
-	err := obj.db.QueryRow("SELECT `data` FROM `database_hf_info` WHERE `name`='ver'").Scan(&version)
-	if err != nil {
-		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
-			obj.log.Error("DB", zap.String("func", "getVersion"), zap.Error(err))
-		}
-		version = "0.0.0"
-	}
-
-	return version
-}
-func (obj localSQLiteObj) getExtensions() []string {
-	var extensions string
-
-	err := obj.db.QueryRow("SELECT `data` FROM `database_hf_info` WHERE `name`='extensions'").Scan(&extensions)
-	if err != nil {
-		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
-			obj.log.Error("DB", zap.String("func", "getVersion"), zap.Error(err))
-		}
-		extensions = "txt.md"
-	}
-
-	return strings.Split(extensions, ".")
-}
-
-//.
-
-// Выполнение операции в рамках транзакции
-func (obj localSQLiteObj) execTransaction(tx *sql.Tx, query string) {
-	_, err := tx.Exec(query)
-	if err != nil {
-		// В случае ошибки откатываем транзакцию
-		tx.Rollback()
-		obj.log.Error("Break from transaction", zap.String("func", "execTransaction"), zap.Error(err))
-	}
-}
-
-// Начало транзакции
-func (obj localSQLiteObj) beginTransaction(funcName string) *sql.Tx {
-	tx, err := obj.db.Begin()
-	if err != nil {
-		obj.log.Panic("Break open transaction in DB", zap.String("func", funcName), zap.Error(err))
-	}
-
-	return tx
-}
-
-// Фиксация (коммит) транзакции
-func (obj localSQLiteObj) endTransaction(tx *sql.Tx, funcName string) {
-	err := tx.Commit()
-	if err != nil {
-		obj.log.Panic("Break commit transaction in DB", zap.String("func", funcName), zap.Error(err))
-	}
+// beginTransaction Инициализация диалога транзакции
+func (obj localSQLiteObj) beginTransaction(funcName string) databaseTransactionObj {
+	return databaseTransaction(funcName, obj.log, obj.db)
 }
 
 ///	#############################################################################################	///
@@ -141,9 +90,7 @@ func (obj localSQLiteObj) endTransaction(tx *sql.Tx, funcName string) {
 func (obj localSQLiteObj) initValues() {
 	obj.log.Info("Start initValues DB")
 
-	// Начало транзакции
 	tx := obj.beginTransaction("initValues")
-
 	currentTime := time.Now().UTC().Unix()
 
 	infoTable := []string{
@@ -157,30 +104,18 @@ func (obj localSQLiteObj) initValues() {
 	//	Заполение INFO-таблицы
 	for _, query := range infoTable {
 		query = "INSERT INTO `database_hf_info` (`name`, `data`) VALUES (" + query + ")"
-		obj.execTransaction(tx, query)
+		tx.Exec(query)
 	}
 
 	//Установка нулевых значений для таблицы
-	obj.execTransaction(tx, "INSERT INTO `database_hf_sha` (`id`, `key`) VALUES (0, 'NULL')")
-	obj.execTransaction(tx, "INSERT INTO `database_hf_vectorInfo` (`id`, `resize`, `old`, `new`) VALUES (0, 0, 0, 0)")
-	obj.execTransaction(tx, "INSERT INTO `database_hf_pkg` (`id`, `key`, `isDel`, `time`, `begin`) VALUES (0, 'NULL', true, 0, 0)")
+	tx.Exec("INSERT INTO `database_hf_sha` (`id`, `key`) VALUES (0, 'NULL')")
+	tx.Exec("INSERT INTO `database_hf_vectorInfo` (`id`, `resize`, `old`, `new`) VALUES (0, 0, 0, 0)")
+	tx.Exec("INSERT INTO `database_hf_pkg` (`id`, `key`, `isDel`, `time`, `begin`) VALUES (0, 'NULL', true, 0, 0)")
 
-	// Фиксация (коммит) транзакции
-	obj.endTransaction(tx, "initValues")
+	tx.End()
 }
 
 ///	#############################################################################################	///
-
-// Обновление внутренего счетчика активности (только для использования при транзации)
-func (obj localSQLiteObj) tapActivityTransaction(tx *sql.Tx) {
-	currentTime := time.Now().UTC().Unix()
-
-	_, err := tx.Exec("UPDATE `database_hf_info` SET `data` = ? WHERE `name` = 'upd';", currentTime)
-	if err != nil {
-		tx.Rollback()
-		obj.log.Error("Break transaction", zap.String("func", "tapActivityTransaction"), zap.Error(err))
-	}
-}
 
 //.//
 
@@ -230,20 +165,14 @@ func (obj localSQLiteObj) addSHA(key string) uint32 {
 	}
 
 	tx := obj.beginTransaction("addSHA")
-	obj.tapActivityTransaction(tx)
-
-	result, err := tx.Exec("INSERT INTO `database_hf_sha` (`key`) VALUES (?)", key)
-	if err != nil {
-		tx.Rollback()
-		obj.log.Error("Break transaction", zap.String("func", "tapActivityTransaction"), zap.Error(err))
-	}
+	result := tx.ExecValue("INSERT INTO `database_hf_sha` (`key`) VALUES (?)", key)
+	tx.End()
 
 	lastInsertID, err := result.LastInsertId()
 	if err != nil {
 		obj.log.Error("Break upload LastInsertId", zap.String("func", "tapActivityTransaction"), zap.Error(err))
 	}
 
-	obj.endTransaction(tx, "addSHA")
 	return uint32(lastInsertID)
 }
 
