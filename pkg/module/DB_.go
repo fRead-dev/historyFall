@@ -137,6 +137,7 @@ func (obj localSQLiteObj) initValues() {
 	tx.Exec("INSERT INTO `database_hf_sha` (`id`, `key`) VALUES (0, 'NULL')")
 	tx.Exec("INSERT INTO `database_hf_vectorInfo` (`id`, `resize`, `old`, `new`) VALUES (0, 0, 0, 0)")
 	tx.Exec("INSERT INTO `database_hf_pkg` (`id`, `key`, `isDel`, `time`, `begin`) VALUES (0, 'NULL', true, 0, 0)")
+	tx.Exec("INSERT INTO `database_hf_timeline` (`id`, `ver`, `time`, `vector`) VALUES (0, 0, 0, 0)")
 
 	tx.End()
 }
