@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="._temp" uuid="e9699ca7-9ad7-46df-a5cc-d55a8d264ec8">
+    <data-source source="LOCAL" name="_temp" uuid="41965079-4b43-4475-9490-3228361a739c">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/pkg/_temp/._temp.hf</jdbc-url>
+      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/pkg/_temp/_temp.hf</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
       <libraries>
         <library>
