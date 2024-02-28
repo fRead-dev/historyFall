@@ -83,12 +83,12 @@ func database_Sync(db *sql.DB, log *zap.Logger, autoFix bool) bool {
 	isOk := true
 
 	for _, st := range tableArr {
-		createTable := false                              //	Тригер на инициализацию таблицы
-		delTable := false                                 //	Тригер на удаление существующей таблицы
-		var sqlStr string = ""                            //	Структура таблицы для сравнения
-		tableName := databaseGetName(&st)                 //	Название таблицы
-		tableSql := databaseGenerateSQLiteFromStruct(&st) //	Правильная структура таблицы
-		//indexes := databaseGetIndexes(&st)				  //	Список переменных для индекса
+		createTable := false                                    //	Тригер на инициализацию таблицы
+		delTable := false                                       //	Тригер на удаление существующей таблицы
+		var sqlStr string = ""                                  //	Структура таблицы для сравнения
+		tableName := databaseGetName(&st)                       //	Название таблицы
+		tableSql := databaseGenerateSQLiteFromStruct(&st)       //	Правильная структура таблицы
+		indexes := databaseGenerateSQLiteIndexesFromStruct(&st) //	Список переменных для индекса
 
 		//Поиск таблицы среди существующих в БД
 		err := db.QueryRow("SELECT `sql` FROM `sqlite_master` WHERE `type`='table' AND `name`=?", tableName).Scan(&sqlStr)
@@ -134,6 +134,12 @@ func database_Sync(db *sql.DB, log *zap.Logger, autoFix bool) bool {
 			} else {
 				isOk = false
 				log.Debug("CREATE TABLE", zap.String("table", tableName), zap.String("tableSql", tableSql))
+
+				//	Добавляем индексы к таблице
+				if len(indexes) > 8 {
+					_, err = db.Exec(indexes)
+					log.Debug("CREATE INDEX", zap.String("table", tableName), zap.String("indexes", indexes), zap.Error(err))
+				}
 			}
 		}
 	}
