@@ -14,7 +14,7 @@ type database_hf_info struct {
 
 /* Хранилище хещ-сумм */
 type database_hf_sha struct {
-	ID  uint64 `database_name:"id" database_i:"pk ai notnull"`
+	ID  uint64 `database_name:"id" database_i:"pk ai notnull index"`
 	KEY string `database_name:"key"`
 }
 
@@ -22,11 +22,11 @@ type database_hf_sha struct {
 
 /* Информация о векторах изменения */
 type database_hf_vectorInfo struct {
-	ID     uint32 `database_name:"id" database_i:"pk ai notnull" `
+	ID     uint32 `database_name:"id" database_i:"pk ai notnull index" `
 	Resize int64  `database_name:"resize"` //	Изменение в размере между версиями
 
-	Old database_hf_sha `database_name:"old" database_fk:"database_hf_sha:id"` //	хеш-сумма старого файла
-	New database_hf_sha `database_name:"new" database_fk:"database_hf_sha:id"` //	хещ-сумма нового файла
+	Old database_hf_sha `database_name:"old" database_i:"index" database_fk:"database_hf_sha:id"` //	хеш-сумма старого файла
+	New database_hf_sha `database_name:"new" database_i:"index" database_fk:"database_hf_sha:id"` //	хещ-сумма нового файла
 }
 
 // database_hf_vectorsData	Сами векторы
@@ -39,24 +39,24 @@ type database_hf_vectorsData struct {
 
 /* Описание файлов в директории */
 type database_hf_pkg struct {
-	ID    uint32 `database_name:"id" database_i:"pk ai notnull"`
+	ID    uint32 `database_name:"id" database_i:"pk ai notnull index"`
 	KEY   string `database_name:"key" database_i:"notnull"` //	Название файла
 	IsDel bool   `database_name:"isDel"`                    //	Этот файл был удален?
 	Time  uint64 `database_name:"time"`                     //	Последнее обновление данных по файлу
 
-	Begin database_hf_vectorInfo `database_name:"begin" database_fk:"database_hf_vectorInfo:id"` //	Стартовый вектор для файла, задается при создании файла
+	Begin database_hf_vectorInfo `database_name:"begin" database_i:"index" database_fk:"database_hf_vectorInfo:id"` //	Стартовый вектор для файла, задается при создании файла
 }
 
 //.//
 
 /* История изменений */
 type database_hf_timeline struct {
-	ID   uint32 `database_name:"id" database_i:"pk ai notnull"`
+	ID   uint32 `database_name:"id" database_i:"pk ai notnull index"`
 	Ver  uint32 `database_name:"ver"`  //	Минорная версия
 	Time uint64 `database_name:"time"` //	Время создания точки
 
-	File   database_hf_pkg        `database_name:"file" database_fk:"database_hf_pkg:id"`          //	К какому файлу относится
-	Vector database_hf_vectorInfo `database_name:"vector" database_fk:"database_hf_vectorInfo:id"` //	Вектор
+	File   database_hf_pkg        `database_name:"file" database_i:"index" database_fk:"database_hf_pkg:id"`          //	К какому файлу относится
+	Vector database_hf_vectorInfo `database_name:"vector" database_i:"index" database_fk:"database_hf_vectorInfo:id"` //	Вектор
 
 	Comment *[]byte //	Указатель на комментарий если он есть
 }
@@ -88,6 +88,7 @@ func database_Sync(db *sql.DB, log *zap.Logger, autoFix bool) bool {
 		var sqlStr string = ""                            //	Структура таблицы для сравнения
 		tableName := databaseGetName(&st)                 //	Название таблицы
 		tableSql := databaseGenerateSQLiteFromStruct(&st) //	Правильная структура таблицы
+		//indexes := databaseGetIndexes(&st)				  //	Список переменных для индекса
 
 		//Поиск таблицы среди существующих в БД
 		err := db.QueryRow("SELECT `sql` FROM `sqlite_master` WHERE `type`='table' AND `name`=?", tableName).Scan(&sqlStr)
