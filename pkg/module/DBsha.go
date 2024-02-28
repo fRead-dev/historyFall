@@ -30,6 +30,8 @@ func (obj *_historyFall_dbSHA) GetCacheLimit() uint16 {
 func (obj *_historyFall_dbSHA) SetCacheLimit(limit uint16) {
 	obj.ClearCache()
 	obj.cacheLimit = limit
+
+	obj.cache = make(map[uint64]string)
 	obj.cacheKeys = make([]uint64, 0, obj.cacheLimit)
 }
 
@@ -133,7 +135,8 @@ func (obj *_historyFall_dbSHA) Add(hash string) uint64 {
 	tx.End()
 
 	lastInsertID, _ := result.LastInsertId()
-	obj.addCache(uint64(lastInsertID), hash)
+	retID := uint64(lastInsertID)
 
-	return uint64(lastInsertID)
+	obj.addCache(retID, hash)
+	return retID
 }
