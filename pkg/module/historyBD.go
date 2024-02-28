@@ -86,7 +86,7 @@ func initDB(log *zap.Logger, dir string, name string) localSQLiteObj {
 	if dir == "__TEST__" {
 		dbFilePath = ":memory:"
 	} else {
-		dbFilePath = obj.dir + "/." + ValidFileName(name, 40) + ".hf"
+		dbFilePath = obj.dir + "/" + ValidFileName(name, 40) + ".hf"
 	}
 	obj.log.Debug("DB", zap.String("path", dbFilePath))
 

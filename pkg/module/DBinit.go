@@ -6,16 +6,60 @@ import (
 	"reflect"
 )
 
+// __database_infoVocabulary Словарь сопоставления для database_i
+var __database_infoVocabulary = map[string]string{
+	"pk":      "PRIMARY KEY",
+	"ai":      "AUTOINCREMENT",
+	"notnull": "NOT NULL",
+}
+
+// __database_valueTypeSQLite Получение типа переменной для SQLite
+func __database_valueTypeSQLite(value *reflect.Value) string {
+	switch (*value).Interface().(type) {
+
+	case []byte:
+		return "BLOB"
+
+	case string:
+		return "TEXT"
+
+	case bool:
+	case int:
+	case int8:
+	case int16:
+	case int32:
+	case int64:
+	case uint:
+	case uint8:
+	case uint16:
+	case uint32:
+	case uint64:
+		return "INTEGER"
+
+	case float32:
+	case float64:
+		return "REAL"
+	}
+
+	return "BLOB"
+}
+
+// ################################################################################	//
 type testGtr struct {
 	id  uint32
 	dar string
 }
 
 type testStruct struct {
-	name     string `database_i:"pk ai notnull" database_name:"" database_fk:"32 23 23"`
+	name     string `database_i:"pk ai notnull" database_name:"name" database_fk:"table:colum"`
 	value    []byte
 	test     *testGtr
 	testFull testGtr
+}
+
+/* Генерация */
+func databaseGenerateSQLiteFromStruct(s interface{}) {
+
 }
 
 func BBBBBBB(log *zap.Logger) {
@@ -26,6 +70,7 @@ func BBBBBBB(log *zap.Logger) {
 	// Итерация по полям структуры
 	for i := 0; i < userType.NumField(); i++ {
 		field := userType.Field(i)
+		//value := reflect.ValueOf(userType).Field(i)
 
 		// Получение имени поля
 		fieldName := field.Name
