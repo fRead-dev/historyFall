@@ -42,6 +42,51 @@ func databaseGetName(s *interface{}) string {
 	return reflect.TypeOf(*s).Name()
 }
 
+/*	Получение индексов по структуре	*/
+func databaseGetIndexes(s *interface{}) []string {
+	var indexes []string
+
+	refT := reflect.TypeOf(*s)
+	size := refT.NumField()
+
+	//	Перебор всех полей структуры
+	for i := 0; i < size; i++ {
+		field := refT.Field(i)
+		add := false
+
+		//	Поиск указателя для индекса
+		database_i := field.Tag.Get("database_i")
+		if len(database_i) > 0 {
+			database_i = strings.ToLower(database_i) //	Приводим все в нижний регистр
+			points := strings.Split(database_i, " ") //	Разбиваем по пробелу
+			for _, point := range points {
+				if point == "index" {
+					add = true
+					break
+				}
+
+			}
+		}
+
+		if !add {
+			continue
+		}
+
+		name := field.Name
+
+		//Обработка если имя колонки задано
+		database_name := field.Tag.Get("database_name")
+		if len(database_name) > 0 {
+			name = database_name
+		}
+
+		if add {
+			indexes = append(indexes, name)
+		}
+	}
+	return indexes
+}
+
 /* Генерация CREATE TABLE по структуре	(ссылки не учитываются) */
 func databaseGenerateSQLiteFromStruct(s *interface{}) string {
 	create := "CREATE TABLE "
