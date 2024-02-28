@@ -55,8 +55,8 @@ type database_hf_timeline struct {
 	Ver  uint32 `database_name:"ver"`  //	Минорная версия
 	Time uint64 `database_name:"time"` //	Время создания точки
 
-	File   database_hf_pkg        `database_name:"file" database_i:"index" database_fk:"database_hf_pkg:id"`          //	К какому файлу относится
-	Vector database_hf_vectorInfo `database_name:"vector" database_i:"index" database_fk:"database_hf_vectorInfo:id"` //	Вектор
+	File   database_hf_pkg         `database_name:"file" database_i:"index" database_fk:"database_hf_pkg:id"`          //	К какому файлу относится
+	Vector database_hf_vectorsData `database_name:"vector" database_i:"index" database_fk:"database_hf_vectorInfo:id"` //	Вектор
 
 	Comment *[]byte //	Указатель на комментарий если он есть
 }
