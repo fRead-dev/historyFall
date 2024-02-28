@@ -169,6 +169,8 @@ type databaseTransactionObj struct {
 /* Инициализация транзакционного обьекта */
 func databaseTransaction(name string, log *zap.Logger, db *sql.DB) databaseTransactionObj {
 	obj := databaseTransactionObj{}
+	obj.db = db
+	obj.log = log
 
 	tx, err := obj.db.Begin()
 	if err != nil {
@@ -179,8 +181,6 @@ func databaseTransaction(name string, log *zap.Logger, db *sql.DB) databaseTrans
 	obj.name = name
 	obj.init = true
 	obj.tx = tx
-	obj.db = db
-	obj.log = log
 
 	return obj
 }
