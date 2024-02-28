@@ -2,7 +2,11 @@ package module
 
 import "go.uber.org/zap"
 
-// Расширение тектовых файлов с которыми работает модуль
+var constHistoryFallExtensions = []string{
+	"hf",
+}
+
+// Расширение тектовых файлов с которыми работает модуль по умолчанию
 var constTextExtensions = []string{
 	"txt",
 	"md",
