@@ -17,8 +17,13 @@ type _historyFall_dbSHA struct {
 
 /*	Очистка кеша	*/
 func (obj *_historyFall_dbSHA) ClearCache() {
-	obj.cache = nil
-	obj.cacheKeys = nil
+	if obj.cache != nil {
+		obj.cache = nil
+		obj.cacheKeys = nil
+
+		obj.cache = make(map[uint64]string)
+		obj.cacheKeys = make([]uint64, 0, obj.cacheLimit)
+	}
 }
 
 /*	Получить размер кеша	*/
@@ -28,11 +33,8 @@ func (obj *_historyFall_dbSHA) GetCacheLimit() uint16 {
 
 /* Изменить размер кеша */
 func (obj *_historyFall_dbSHA) SetCacheLimit(limit uint16) {
-	obj.ClearCache()
 	obj.cacheLimit = limit
-
-	obj.cache = make(map[uint64]string)
-	obj.cacheKeys = make([]uint64, 0, obj.cacheLimit)
+	obj.ClearCache()
 }
 
 // addCache добаваление хеша в кеш
