@@ -28,6 +28,23 @@ func (obj *_historyFall_dbVector) getInfo(id uint32) (database_hf_vectorInfo, bo
 	return retObj, status
 }
 
+// searchID Поиск совпадаюшего вектора
+func (obj *_historyFall_dbVector) searchID(oldID uint64, newID uint64) (uint32, bool) {
+	retID := uint32(0)
+	status := true
+
+	err := obj.globalObj.db.QueryRow("SELECT `id` FROM `database_hf_vectorInfo` WHERE `old`=? AND `new`=?", oldID, newID).Scan(&retID)
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
+			obj.globalObj.log.Error("DB", zap.String("func", "Vector:Search"), zap.Error(err))
+		}
+
+		status = false
+	}
+
+	return retID, status
+}
+
 // /	#############################################################################################	///
 type _historyFall_dbVector struct {
 	globalObj *localSQLiteObj
@@ -64,21 +81,40 @@ func (obj *_historyFall_dbVector) Get(id uint32) (database_hf_vectorsData, bool)
 	return retObj, status
 }
 
-/* Поиск совпадаюшего вектора */
-func (obj *_historyFall_dbVector) Search(oldID uint64, newID uint64) (uint32, bool) {
-	retID := uint32(0)
-	status := true
+/* Поиск векторов по хешу  | Return( []OLD, []NEW )*/
+func (obj *_historyFall_dbVector) Search(hash *string) ([]uint32, []uint32) {
+	var oldArr []uint32
+	var newArr []uint32
 
-	err := obj.globalObj.db.QueryRow("SELECT `id` FROM `database_hf_vectorInfo` WHERE `old`=? AND `new`=?", oldID, newID).Scan(&retID)
-	if err != nil {
-		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
-			obj.globalObj.log.Error("DB", zap.String("func", "Vector:Search"), zap.Error(err))
-		}
-
-		status = false
+	//	Ищем указатель хеша и откидываем если не найден
+	hashID, status := obj.globalObj.SHA.Search(hash)
+	if !status {
+		return oldArr, newArr
 	}
 
-	return retID, status
+	//	Загружаем все совпаения по OLD
+	rows, err := obj.globalObj.db.Query("SELECT `id` FROM `database_hf_vectorInfo` WHERE `old`=?", hashID)
+	if err == nil {
+		for rows.Next() {
+			var bufID uint32
+			rows.Scan(&bufID)
+			oldArr = append(oldArr, bufID)
+		}
+	}
+	rows.Close()
+
+	//	Загружаем все совпаения по NEW
+	rows, err = obj.globalObj.db.Query("SELECT `id` FROM `database_hf_vectorInfo` WHERE `new`=?", hashID)
+	if err == nil {
+		for rows.Next() {
+			var bufID uint32
+			rows.Scan(&bufID)
+			newArr = append(newArr, bufID)
+		}
+	}
+	rows.Close()
+
+	return oldArr, newArr
 }
 
 /* Добавление нового вектора (Если есть совпадение то вернет указатель на него) */
@@ -89,7 +125,7 @@ func (obj *_historyFall_dbVector) Add(data *[]byte, hashOld *string, hashNew *st
 	newHash := obj.globalObj.SHA.Set(*hashNew)
 
 	//	Поиск совпадения по вектору
-	id, status := obj.Search(oldHash.ID, newHash.ID)
+	id, status := obj.searchID(oldHash.ID, newHash.ID)
 	if status {
 		return id
 	}

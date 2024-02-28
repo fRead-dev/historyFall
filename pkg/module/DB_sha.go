@@ -92,15 +92,15 @@ func (obj *_historyFall_dbSHA) Get(id uint64) (string, bool) {
 }
 
 /* Поиск хеша по строке */
-func (obj *_historyFall_dbSHA) Search(hash string) (uint64, bool) {
-	if len(hash) < 8 {
+func (obj *_historyFall_dbSHA) Search(hash *string) (uint64, bool) {
+	if len(*hash) < 8 {
 		return 0, false
 	}
 
 	var id uint64
 	var status bool = true
 
-	err := obj.globalObj.db.QueryRow("SELECT `id` FROM `database_hf_sha` WHERE `key` = ?", hash).Scan(&id)
+	err := obj.globalObj.db.QueryRow("SELECT `id` FROM `database_hf_sha` WHERE `key` = ?", *hash).Scan(&id)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением
 			obj.globalObj.log.Error("DB", zap.String("func", "SHA:Search"), zap.Error(err))
@@ -113,7 +113,7 @@ func (obj *_historyFall_dbSHA) Search(hash string) (uint64, bool) {
 	//	Кешируем если успех и его там нет
 	if status {
 		if _, st := obj.getCache(id); !st {
-			obj.addCache(id, hash)
+			obj.addCache(id, *hash)
 		}
 	}
 
@@ -122,7 +122,7 @@ func (obj *_historyFall_dbSHA) Search(hash string) (uint64, bool) {
 
 /* Добавление новогo ключа */
 func (obj *_historyFall_dbSHA) Add(hash string) uint64 {
-	id, status := obj.Search(hash)
+	id, status := obj.Search(&hash)
 
 	//	Возврат если такой ключ есть
 	if status {
