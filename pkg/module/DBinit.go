@@ -1,6 +1,8 @@
 package module
 
 import (
+	"database/sql"
+	"go.uber.org/zap"
 	"reflect"
 	"strings"
 )
@@ -27,6 +29,10 @@ func __database_valueTypeSQLite(value *reflect.Value) string {
 	}
 
 	return "BLOB"
+}
+
+type databaseConnectObj struct {
+	*sql.DB
 }
 
 // ################################################################################	//
@@ -147,6 +153,87 @@ func databaseGenerateSQLiteFromStruct(s *interface{}) string {
 
 	create += " )"
 	return create
+}
+
+// ################################################################################	//
+
+type databaseTransactionObj struct {
+	name string
+	init bool
+
+	tx  *sql.Tx
+	db  *sql.DB
+	log *zap.Logger
+}
+
+/* Инициализация транзакционного обьекта */
+func databaseTransaction(name string, log *zap.Logger, db *sql.DB) databaseTransactionObj {
+	obj := databaseTransactionObj{}
+
+	tx, err := obj.db.Begin()
+	if err != nil {
+		obj.log.Error("Break open transaction in DB", zap.String("func", name), zap.Error(err))
+		obj.init = false
+	}
+
+	obj.name = name
+	obj.init = true
+	obj.tx = tx
+	obj.db = db
+	obj.log = log
+
+	return obj
+}
+
+// Exec Выполнение операции в рамках транзакции
+func (obj *databaseTransactionObj) Exec(query string) {
+	if !obj.init {
+		return
+	}
+
+	_, err := obj.tx.Exec(query)
+	if err != nil {
+		obj.tx.Rollback() // В случае ошибки откатываем транзакцию
+		obj.log.Error("Break from transaction", zap.String("func", obj.name), zap.Error(err))
+	}
+}
+
+// ExecValue Выполнение операции в рамках транзакции с педаваемой переменой
+func (obj *databaseTransactionObj) ExecValue(query string, value string) {
+	if !obj.init {
+		return
+	}
+
+	_, err := obj.tx.Exec(query, value)
+	if err != nil {
+		obj.tx.Rollback() // В случае ошибки откатываем транзакцию
+		obj.log.Error("Break from transaction", zap.String("func", obj.name), zap.Error(err))
+	}
+}
+
+// ExecValueX2 Выполнение операции в рамках транзакции с педаваемыми переменными
+func (obj *databaseTransactionObj) ExecValueX2(query string, value1 string, value2 string) {
+	if !obj.init {
+		return
+	}
+
+	_, err := obj.tx.Exec(query, value1, value2)
+	if err != nil {
+		obj.tx.Rollback() // В случае ошибки откатываем транзакцию
+		obj.log.Error("Break from transaction", zap.String("func", obj.name), zap.Error(err))
+	}
+}
+
+// End Фиксация (коммит) транзакции
+func (obj *databaseTransactionObj) End() {
+	if !obj.init {
+		return
+	}
+
+	err := obj.tx.Commit()
+	if err != nil {
+		obj.log.Panic("Break commit transaction in DB", zap.String("func", obj.name), zap.Error(err))
+	}
 }
 
 // ################################################################################	//

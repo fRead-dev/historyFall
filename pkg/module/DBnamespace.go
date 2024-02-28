@@ -68,12 +68,13 @@ type database_hf_timelineComments struct {
 //	#####################################################################################	//
 
 // Синсхронизация структуры таблицы
-func database_Sync(db *sql.DB, log *zap.Logger, autoFix bool) {
+func database_Sync(db *sql.DB, log *zap.Logger, autoFix bool) bool {
 	tableArr := []interface{}{
 		database_hf_info{},
 		database_hf_sha{},
 		database_hf_vectorInfo{},
 		database_hf_vectorsData{},
+		database_hf_pkg{},
 		database_hf_timeline{},
 		database_hf_timelineComments{},
 	}
@@ -128,6 +129,7 @@ func database_Sync(db *sql.DB, log *zap.Logger, autoFix bool) {
 			if err != nil {
 				log.Panic("Break CREATE TABLE", zap.String("table", tableName), zap.Error(err))
 			} else {
+				isOk = false
 				log.Debug("CREATE TABLE", zap.String("table", tableName), zap.String("tableSql", tableSql))
 			}
 		}
@@ -138,4 +140,5 @@ func database_Sync(db *sql.DB, log *zap.Logger, autoFix bool) {
 		log.Fatal("Error database initialization")
 	}
 
+	return isOk
 }

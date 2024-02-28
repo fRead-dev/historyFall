@@ -2,15 +2,6 @@ package module
 
 import "go.uber.org/zap"
 
-// Список названий таблиц используемых в базе
-var constTablesFromDB = []string{
-	"info",
-	"sha",
-	"pkg",
-	"vectors",
-	"timeline",
-}
-
 // Расширение тектовых файлов с которыми работает модуль
 var constTextExtensions = []string{
 	"txt",
