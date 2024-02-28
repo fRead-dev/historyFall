@@ -10,7 +10,7 @@ import (
 )
 
 // Получение дельты изменения, сравнивая два текста
-func (obj HistoryFallObj) generateStoryVector(oldText *[]byte, newText *[]byte) []byte {
+func generateStoryVector(oldText *[]byte, newText *[]byte) []byte {
 
 	//	Формирование вектора
 	var vector string
@@ -35,7 +35,7 @@ func (obj HistoryFallObj) generateStoryVector(oldText *[]byte, newText *[]byte) 
 }
 
 // сравнение двух файлов и получение текстового вектора изменений
-func (obj HistoryFallObj) Comparison(oldFile string, newFile string) ([]byte, error) {
+func Comparison(oldFile string, newFile string) ([]byte, error) {
 
 	oldFileBytes, err := ioutil.ReadFile(oldFile)
 	if err != nil {
@@ -48,13 +48,13 @@ func (obj HistoryFallObj) Comparison(oldFile string, newFile string) ([]byte, er
 	}
 
 	//Получаем вектор изменений
-	returnSlice := obj.generateStoryVector(&oldFileBytes, &newFileBytes)
+	returnSlice := generateStoryVector(&oldFileBytes, &newFileBytes)
 
 	return returnSlice, nil
 }
 
 // Генерация файла более новой версии относительно вектора
-func (obj HistoryFallObj) GenerateFileFromVector(comparison *[]byte, defFilePath string, saveNewFilePath string) error {
+func GenerateFileFromVector(comparison *[]byte, defFilePath string, saveNewFilePath string) error {
 
 	//	Расжатие вектора
 	reader := flate.NewReader(bytes.NewReader(*comparison))
