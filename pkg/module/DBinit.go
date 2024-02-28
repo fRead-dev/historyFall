@@ -186,42 +186,48 @@ func databaseTransaction(name string, log *zap.Logger, db *sql.DB) databaseTrans
 }
 
 // Exec Выполнение операции в рамках транзакции
-func (obj *databaseTransactionObj) Exec(query string) {
+func (obj *databaseTransactionObj) Exec(query string) sql.Result {
 	if !obj.init {
-		return
+		return nil
 	}
 
-	_, err := obj.tx.Exec(query)
+	rez, err := obj.tx.Exec(query)
 	if err != nil {
 		obj.tx.Rollback() // В случае ошибки откатываем транзакцию
 		obj.log.Error("Break from transaction", zap.String("func", obj.name), zap.Error(err))
 	}
+
+	return rez
 }
 
-// ExecValue Выполнение операции в рамках транзакции с педаваемой переменой
-func (obj *databaseTransactionObj) ExecValue(query string, value string) {
+// ExecValue Выполнение операции в рамках транзакции с педаваемой переменой и вовзратом
+func (obj *databaseTransactionObj) ExecValue(query string, value string) sql.Result {
 	if !obj.init {
-		return
+		return nil
 	}
 
-	_, err := obj.tx.Exec(query, value)
+	rez, err := obj.tx.Exec(query, value)
 	if err != nil {
 		obj.tx.Rollback() // В случае ошибки откатываем транзакцию
 		obj.log.Error("Break from transaction", zap.String("func", obj.name), zap.Error(err))
 	}
+
+	return rez
 }
 
 // ExecValueX2 Выполнение операции в рамках транзакции с педаваемыми переменными
-func (obj *databaseTransactionObj) ExecValueX2(query string, value1 string, value2 string) {
+func (obj *databaseTransactionObj) ExecValueX2(query string, value1 string, value2 string) sql.Result {
 	if !obj.init {
-		return
+		return nil
 	}
 
-	_, err := obj.tx.Exec(query, value1, value2)
+	rez, err := obj.tx.Exec(query, value1, value2)
 	if err != nil {
 		obj.tx.Rollback() // В случае ошибки откатываем транзакцию
 		obj.log.Error("Break from transaction", zap.String("func", obj.name), zap.Error(err))
 	}
+
+	return rez
 }
 
 // End Фиксация (коммит) транзакции
@@ -234,6 +240,12 @@ func (obj *databaseTransactionObj) End() {
 	if err != nil {
 		obj.log.Panic("Break commit transaction in DB", zap.String("func", obj.name), zap.Error(err))
 	}
+}
+func (obj *databaseTransactionObj) Close() {
+	obj.End()
+}
+func (obj *databaseTransactionObj) Exit() {
+	obj.End()
 }
 
 // ################################################################################	//
