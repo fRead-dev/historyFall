@@ -188,7 +188,7 @@ func database_GetBaseStruct(db *sql.DB) map[string]string {
 			sqlStr = SHA1(sqlStr)
 		}
 
-		arrHash[tableName] = SHA1(sqlStr)
+		arrHash[tableName] = sqlStr
 	}
 
 	return arrHash
