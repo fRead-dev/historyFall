@@ -87,6 +87,27 @@ func databaseGetIndexes(s *interface{}) []string {
 	return indexes
 }
 
+//##//
+
+/* Генерация CREATE INDEX по структуре  */
+func databaseGenerateSQLiteIndexesFromStruct(s *interface{}) string {
+	var str string
+	indexes := databaseGetIndexes(s)
+	tamleName := databaseGetName(s)
+
+	//Отсечение если нет индексов
+	if len(indexes) == 0 {
+		return ""
+	}
+
+	// Добавляем индекс в буфер отдачи
+	for _, index := range indexes {
+		str += "CREATE INDEX IF NOT EXISTS `" + SHA1(tamleName + strings.Join(indexes, ":"))[:6] + "` ON " + tamleName + "(" + index + ");"
+	}
+
+	return str
+}
+
 /* Генерация CREATE TABLE по структуре	(ссылки не учитываются) */
 func databaseGenerateSQLiteFromStruct(s *interface{}) string {
 	create := "CREATE TABLE "
