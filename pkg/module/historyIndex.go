@@ -29,7 +29,7 @@ func Init(log *zap.Logger, dir string) HistoryFallObj {
 	obj := InitLight(log, dir)
 
 	//	Инициализация базы
-	sql := initDB(log, obj.dir, filepath.Base(obj.dir))
+	sql := initDB(log, obj.dir, filepath.Base(obj.dir), true)
 	obj.sqlInit = true
 	obj.sql = &sql
 

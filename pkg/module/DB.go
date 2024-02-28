@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-/*	Главный обьект класса работы с базой	*/
+// localSQLiteObj	Главный обьект класса работы с базой
 type localSQLiteObj struct {
 	db  *sql.DB
 	log *zap.Logger
@@ -24,9 +24,21 @@ type localSQLiteObj struct {
 
 ///	#############################################################################################	///
 
-func initDB(log *zap.Logger, dir string, name string) localSQLiteObj {
+/*	Инициализация работы с базой	*/
+func initDB(log *zap.Logger, dir string, name string, autoFix bool) localSQLiteObj {
 	log.Info("Init DB..")
+
 	var dbFilePath string = ""
+	fileName := ValidFileName(name, 40)
+
+	//	Проверка имени файла на соотвествие ожидаемого
+	if !IsValidFileType(fileName, constHistoryFallExtensions) {
+		if autoFix {
+			fileName += "." + constHistoryFallExtensions[0]
+		} else {
+			log.Fatal("File extension not supported!")
+		}
+	}
 
 	//Генерация пути к базе с учетом тестирования
 	if dir == "__TEST__" {
@@ -56,7 +68,7 @@ func initDB(log *zap.Logger, dir string, name string) localSQLiteObj {
 	obj.db = db
 
 	//	Синхронизация таблиц с паттерном
-	status := database_Sync(db, log, true)
+	status := obj.Sync(autoFix)
 
 	//	Переинициализация основных переменных
 	if !status {
@@ -65,9 +77,23 @@ func initDB(log *zap.Logger, dir string, name string) localSQLiteObj {
 
 	return obj
 }
+
+/*	Проверка инициализированой базы на соотвествие (с возможностью автоматически разметить, удаляя невалидное)	*/
+func (obj localSQLiteObj) Sync(autoFix bool) bool {
+	return database_Sync(obj.db, obj.log, autoFix)
+}
+
+/*	Закрытие всех сессий в рамках базы	*/
 func (obj localSQLiteObj) Close() { obj.db.Close() }
 
-// Запуск оптимизации базы
+///	#############################################################################################	///
+
+// beginTransaction Инициализация диалога транзакции
+func (obj localSQLiteObj) beginTransaction(funcName string) databaseTransactionObj {
+	return databaseTransaction(funcName, obj.log, obj.db)
+}
+
+// optimizationDB Запуск оптимизации базы
 func (obj localSQLiteObj) optimizationDB() {
 	obj.log.Info("Start optimization DB")
 
@@ -75,13 +101,6 @@ func (obj localSQLiteObj) optimizationDB() {
 	if err != nil {
 		obj.log.Panic("Break 'VACUUM' from DB", zap.Error(err))
 	}
-}
-
-///	#############################################################################################	///
-
-// beginTransaction Инициализация диалога транзакции
-func (obj localSQLiteObj) beginTransaction(funcName string) databaseTransactionObj {
-	return databaseTransaction(funcName, obj.log, obj.db)
 }
 
 ///	#############################################################################################	///
