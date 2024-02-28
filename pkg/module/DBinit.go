@@ -38,13 +38,14 @@ func databaseGetName(s *interface{}) string {
 
 /* Генерация CREATE TABLE по структуре	(ссылки не учитываются) */
 func databaseGenerateSQLiteFromStruct(s *interface{}) string {
-	create := "CREATE TABLE IF NOT EXISTS "
+	create := "CREATE TABLE "
 	create += "`" + databaseGetName(s) + "`"
 	create += " ( "
 
 	refT := reflect.TypeOf(*s)
 	refV := reflect.ValueOf(*s)
 	size := refT.NumField()
+	var keys []string
 
 	//	Перебор всех полей структуры
 	for i := 0; i < size; i++ {
@@ -94,10 +95,13 @@ func databaseGenerateSQLiteFromStruct(s *interface{}) string {
 				if len(foreignKeyVal[0]) > 0 && len(foreignKeyVal[1]) > 0 { //	Оба не пустые
 					add = true
 
-					other += ", CONSTRAINT"
-					other += " `" + SHA1(name + "_" + foreignKeyVal[0] + "_" + foreignKeyVal[1])[:6] + "`"
-					other += " FOREIGN KEY(" + name + ")"
-					other += " REFERENCES " + foreignKeyVal[0] + "(" + foreignKeyVal[1] + ")"
+					keyBuf := ""
+					keyBuf += "CONSTRAINT"
+					keyBuf += " `" + SHA1(name + "_" + foreignKeyVal[0] + "_" + foreignKeyVal[1])[:6] + "`"
+					keyBuf += " FOREIGN KEY(" + name + ")"
+					keyBuf += " REFERENCES " + foreignKeyVal[0] + "(" + foreignKeyVal[1] + ")"
+
+					keys = append(keys, keyBuf)
 				}
 			}
 		}
@@ -114,9 +118,14 @@ func databaseGenerateSQLiteFromStruct(s *interface{}) string {
 		}
 	}
 
+	//	Перебор постпараметров если они есть
+	for _, key := range keys {
+		create += key + ", "
+	}
+
 	//	Удаление посленей запятой
 	create = create[:len(create)-2]
 
-	create += " );"
+	create += " )"
 	return create
 }
