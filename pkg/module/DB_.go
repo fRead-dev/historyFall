@@ -110,6 +110,7 @@ func (obj localSQLiteObj) DatabaseValidation() bool {
 
 	for name, hash := range hashStruct {
 		value, status := hashBase[name]
+
 		if !status {
 			return false
 		}
