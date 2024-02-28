@@ -85,18 +85,19 @@ func databaseGenerateSQLiteFromStruct(s *interface{}) string {
 		// Обработка вложенных структур
 		if val.Kind() == reflect.Struct {
 			add = false
-			database_fk := field.Tag.Get("database_fk")
-			if len(database_fk) > 0 {
-				foreignKeyVal := strings.Split(database_fk, ":")
-				if len(foreignKeyVal) == 2 { //	Только два ключа
-					if len(foreignKeyVal[0]) > 0 && len(foreignKeyVal[1]) > 0 { //	Оба не пустые
-						add = true
+		}
 
-						other += ", CONSTRAINT"
-						other += " `" + name + "_" + foreignKeyVal[1] + "`"
-						other += " FOREIGN KEY(" + name + ")"
-						other += " REFERENCES " + foreignKeyVal[0] + "(" + foreignKeyVal[1] + ")"
-					}
+		database_fk := field.Tag.Get("database_fk")
+		if len(database_fk) > 0 {
+			foreignKeyVal := strings.Split(database_fk, ":")
+			if len(foreignKeyVal) == 2 { //	Только два ключа
+				if len(foreignKeyVal[0]) > 0 && len(foreignKeyVal[1]) > 0 { //	Оба не пустые
+					add = true
+
+					other += ", CONSTRAINT"
+					other += " `" + SHA1(name + "_" + foreignKeyVal[0] + "_" + foreignKeyVal[1])[:6] + "`"
+					other += " FOREIGN KEY(" + name + ")"
+					other += " REFERENCES " + foreignKeyVal[0] + "(" + foreignKeyVal[1] + ")"
 				}
 			}
 		}
