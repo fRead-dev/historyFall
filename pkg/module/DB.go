@@ -2,7 +2,6 @@ package module
 
 import (
 	"database/sql"
-	"errors"
 	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
 	"strconv"
@@ -20,6 +19,8 @@ type localSQLiteObj struct {
 
 	Extensions _historyFall_dbExtensions
 	Version    _historyFall_dbVersion
+
+	SHA _historyFall_dbSHA
 }
 
 ///	#############################################################################################	///
@@ -53,6 +54,7 @@ func initDB(log *zap.Logger, dir string, name string, autoFix bool) localSQLiteO
 	if err != nil {
 		log.Panic("Break open DB-sqlite3", zap.Error(err))
 	}
+	log.Info("DB connected")
 
 	//	Инициализация переменных
 	obj := localSQLiteObj{}
@@ -63,9 +65,9 @@ func initDB(log *zap.Logger, dir string, name string, autoFix bool) localSQLiteO
 
 	obj.Extensions = _historyFall_dbExtensions{globalObj: &obj}
 	obj.Version = _historyFall_dbVersion{globalObj: &obj}
+	obj.SHA = _historyFall_dbSHA{globalObj: &obj}
 
-	obj.log.Info("DB connected")
-	obj.db = db
+	obj.SHA.SetCacheLimit(100)
 
 	//	Синхронизация таблиц с паттерном
 	status := obj.Sync(autoFix)
@@ -103,9 +105,7 @@ func (obj localSQLiteObj) optimizationDB() {
 	}
 }
 
-///	#############################################################################################	///
-
-// Инициализация стартовых значений в таблице
+// initValues Инициализация стартовых значений в таблице
 func (obj localSQLiteObj) initValues() {
 	obj.log.Info("Start initValues DB")
 
@@ -135,65 +135,6 @@ func (obj localSQLiteObj) initValues() {
 }
 
 ///	#############################################################################################	///
-
-//.//
-
-// Поиск SHA по базе
-func (obj localSQLiteObj) searchSHA(key string) (uint32, bool) {
-	var id uint32
-	var status bool = true
-
-	err := obj.db.QueryRow("SELECT `id` FROM `database_hf_sha` WHERE `key` = ?", key).Scan(&id)
-	if err != nil {
-		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением
-			obj.log.Error("DB", zap.String("func", "searchSHA"), zap.Error(err))
-		}
-
-		id = 0
-		status = false
-	}
-
-	return id, status
-}
-
-// Получение SHA по ID
-func (obj localSQLiteObj) getSHA(id uint32) (string, bool) {
-	var key string
-	var status bool = true
-
-	err := obj.db.QueryRow("SELECT `key` FROM `database_hf_sha` WHERE `id` = ?", id).Scan(&key)
-	if err != nil {
-		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
-			obj.log.Error("DB", zap.String("func", "getSHA"), zap.Error(err))
-		}
-
-		key = ""
-		status = false
-	}
-
-	return key, status
-}
-
-// Добавление SHA и возврат его ID. Если такая запись есть то просто вернет ID
-func (obj localSQLiteObj) addSHA(key string) uint32 {
-	id, status := obj.searchSHA(key)
-
-	//	Возврат если такой ключ есть
-	if status {
-		return id
-	}
-
-	tx := obj.beginTransaction("addSHA")
-	result := tx.ExecValue("INSERT INTO `database_hf_sha` (`key`) VALUES (?)", key)
-	tx.End()
-
-	lastInsertID, err := result.LastInsertId()
-	if err != nil {
-		obj.log.Error("Break upload LastInsertId", zap.String("func", "tapActivityTransaction"), zap.Error(err))
-	}
-
-	return uint32(lastInsertID)
-}
 
 //.//
 
