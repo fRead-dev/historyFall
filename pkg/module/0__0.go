@@ -69,21 +69,21 @@ func (obj *__TEST__globalObj) Close() {
 }
 
 // fail Проверка на ошибку автоматическая
-func (obj *__TEST__globalObj) fail(isFail bool, args ...any) {
+func (obj *__TEST__globalObj) fail(isNotFail bool, args ...string) {
 	var bufVals []string
-	name := args[0].(string)
+	name := args[0]
 
 	for pos, element := range args {
 		if pos > 0 {
-			bufVals = append(bufVals, zap.Any(string(rune(pos)), element).String)
+			bufVals = append(bufVals, element)
 		}
 	}
 
-	if isFail {
-		obj.log.DPanic("INVALID: "+name, zap.Any("", bufVals))
+	if !isNotFail {
+		obj.log.DPanic("INVALID", zap.Any(name, bufVals))
 		obj.t.Fail()
 	} else {
-		obj.log.Debug("VALID: "+name, zap.Any("", bufVals))
+		obj.log.Debug(" VALID ", zap.Any(name, bufVals))
 	}
 }
 
