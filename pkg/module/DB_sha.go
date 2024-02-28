@@ -92,25 +92,24 @@ func (obj *_historyFall_dbSHA) Get(id uint64) (string, bool) {
 	if obj.cacheLimit > 1 {
 		value, status = obj.getCache(id)
 	}
-
 	if status {
 		return value, status
-
 	} else {
 		status = true
-		err := obj.globalObj.db.QueryRow("SELECT `key` FROM `database_hf_sha` WHERE `id` = ?", id).Scan(&value)
-		if err != nil {
-			if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
-				obj.globalObj.log.Error("DB", zap.String("func", "SHA:Get"), zap.Error(err))
-			}
+	}
 
-			status = false
+	err := obj.globalObj.db.QueryRow("SELECT `key` FROM `database_hf_sha` WHERE `id` = ?", id).Scan(&value)
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
+			obj.globalObj.log.Error("DB", zap.String("func", "SHA:Get"), zap.Error(err))
 		}
 
-		//	Кешируем если успех
-		if status {
-			obj.addCache(id, value)
-		}
+		status = false
+	}
+
+	//	Кешируем если успех
+	if status {
+		obj.addCache(id, value)
 	}
 
 	return value, status

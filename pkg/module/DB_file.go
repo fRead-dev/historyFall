@@ -48,6 +48,19 @@ func (obj *_historyFall_dbFile) ClearCache() {
 func (obj *_historyFall_dbFile) AutoloadCache() {
 	if obj.buf != nil {
 
+		//	Очишаем буфер перед загрузкой
+		obj.ClearCache()
+
+		//	Загружаем все активніе файлі
+		rows, err := obj.globalObj.db.Query("SELECT `id`, `key` FROM `database_hf_pkg` WHERE `isDel`=0 ORDER BY `id` ASC")
+		if err == nil {
+			for rows.Next() {
+				var bufId uint32
+				var bufKey string
+				obj.addKey(bufId, bufKey)
+			}
+		}
+		rows.Close()
 	}
 }
 
@@ -84,4 +97,34 @@ func (obj *_historyFall_dbFile) Get(id uint32) (database_hf_pkg, bool) {
 	}
 
 	return retObj, status
+}
+
+/* Поиск файла по названию */
+func (obj *_historyFall_dbFile) Search(fileName *string) (uint32, bool) {
+	if len(*fileName) < 2 {
+		return 0, false
+	}
+
+	//	поиск по кешу
+	retID, status := obj.searchKey(fileName)
+	if status {
+		return retID, status
+	}
+
+	//
+	err := obj.globalObj.db.QueryRow("SELECT `id` FROM `database_hf_pkg` WHERE `key` = ?", *fileName).Scan(&retID)
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
+			obj.globalObj.log.Error("DB", zap.String("func", "File:Search"), zap.Error(err))
+		}
+
+		status = false
+	}
+
+	//	Кешируем если успех
+	if status {
+		obj.addKey(retID, *fileName)
+	}
+
+	return retID, status
 }
