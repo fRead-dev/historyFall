@@ -14,10 +14,10 @@ import (
 func (obj localSQLiteObj) setInfo(name string, value string) {
 	tx := obj.beginTransaction("SetInfo")
 
-	tx.ExecValueX2("UPDATE `database_hf_info` SET `data` = ? WHERE `name` = ?;", value, name)
+	tx.Exec("UPDATE `database_hf_info` SET `data` = ? WHERE `name` = ?;", value, name)
 
 	currentTime := time.Now().UTC().Unix()
-	tx.ExecValue("UPDATE `database_hf_info` SET `data` = ? WHERE `name` = 'upd';", strconv.FormatInt(currentTime, 10))
+	tx.Exec("UPDATE `database_hf_info` SET `data` = ? WHERE `name` = 'upd';", strconv.FormatInt(currentTime, 10))
 
 	tx.End()
 }
