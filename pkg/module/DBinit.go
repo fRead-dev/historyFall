@@ -51,18 +51,85 @@ type testGtr struct {
 }
 
 type testStruct struct {
-	name     string `database_i:"pk ai notnull" database_name:"name" database_fk:"table:colum"`
-	value    []byte
-	test     *testGtr
-	testFull testGtr
+	Name     string `database_i:"pk ai notnull" database_name:"name" database_fk:"table:colum"`
+	Value    []byte
+	Test     *testGtr
+	TestFull testGtr
 }
 
-/* Генерация */
-func databaseGenerateSQLiteFromStruct(s interface{}) {
+/* Генерация CREATE TABLE по структуре	(ссылки не учитываются) */
+func databaseGenerateSQLiteFromStruct(s interface{}) string {
+	create := "CREATE TABLE IF NOT EXISTS "
+	create += "`" + reflect.TypeOf(s).Name() + "`"
+	create += " ( "
 
+	//CREATE TABLE IF NOT EXISTS info (
+	//			name TEXT PRIMARY KEY,
+	//			data BLOB
+	//		)
+
+	refT := reflect.TypeOf(s)
+	refV := reflect.ValueOf(s)
+	size := refT.NumField()
+
+	//	Перебор всех полей структуры
+	for i := 0; i < size; i++ {
+		field := refT.Field(i)
+		val := refV.Field(i)
+		add := true
+
+		//	пропуск если ссылка
+		if val.Kind() == reflect.Ptr {
+			continue
+		}
+
+		//Формирование онсновых моментов
+		name := field.Name
+		types := __database_valueTypeSQLite(&val)
+
+		//.//
+
+		//Обработка если имя колонки задано
+		database_name := field.Tag.Get("database_name")
+		if len(database_name) > 0 {
+			name = database_name
+		}
+
+		//
+		database_i := field.Tag.Get("database_i")
+		if len(database_i) > 0 {
+		}
+
+		// Обработка вложенных структур
+		if val.Kind() == reflect.Struct {
+			add = false
+			database_fk := field.Tag.Get("database_fk")
+			if len(database_fk) > 0 {
+			}
+		}
+
+		//.//
+
+		//	Формирование строки колонки
+		if add {
+			create += "`" + name + "`"
+			create += " " + types
+		}
+
+		//	закрывающая запятая
+		if size > i+1 {
+			create += ", "
+		}
+	}
+
+	create += " );"
+	return create
 }
 
 func BBBBBBB(log *zap.Logger) {
+
+	log.Info(databaseGenerateSQLiteFromStruct(testStruct{}))
+	return
 
 	// Получение типа структуры
 	userType := reflect.TypeOf(testStruct{})
