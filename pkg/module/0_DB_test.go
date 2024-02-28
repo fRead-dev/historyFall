@@ -7,6 +7,8 @@ import (
 )
 
 func Test(t *testing.T) {
-	test := __TEST__Init(t, zap.DebugLevel)
-	test.log.Warn("TEST")
+	test := __TEST__Init(t, zap.DebugLevel, "TEST NAME OLOLOL")
+
+	test.fail(true, "true")
+	test.fail(false, "false")
 }
