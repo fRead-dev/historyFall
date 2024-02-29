@@ -75,14 +75,14 @@ jobs:
     - name: go.sum [windows] init
       if: ${{ matrix.os == 'windows-latest' }}
       run: |
-        IF NOT EXIST go.sum (
+        IF (NOT EXIST "go.sum") {
           echo "File 'go.sum' does not exist. Creating..."
-          echo "" > go.sum
-        )
-        IF NOT EXIST pkg\module\go.sum (
+          echo "" > "go.sum"
+        }
+        IF (NOT EXIST "pkg\module\go.sum"){
           echo "File 'pkg\module\go.sum' does not exist. Creating..."
-          echo "" > pkg\module\go.sum
-        )
+          echo "" > "pkg\module\go.sum"
+        }
 
 
     - name: Goland init
