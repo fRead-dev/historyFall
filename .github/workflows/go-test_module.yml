@@ -33,4 +33,4 @@ jobs:
       
 
     - name: Start Test
-      run: go test -v ./pkg/module
+      run: go test -v ./pkg/module  -args error
