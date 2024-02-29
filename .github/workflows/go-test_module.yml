@@ -63,6 +63,33 @@ jobs:
           ${{ runner.os }}-go-
 
 
+
+      # Инициализация создаем go.sum для линукса и мака если его нет
+    - name: go.sum [macos, ubuntu] init
+      if: ${{ matrix.os == 'macos-latest' || matrix.os == 'ubuntu-latest' }}
+      run: |
+        if [ ! -f "go.sum" ]; then
+          echo "File 'go.sum' does not exist. Creating..."
+          echo "\n" > go.sum
+        fi
+        if [ ! -f "pkg/module/go.sum" ]; then
+          echo "File 'pkg/module/go.sum' does not exist. Creating..."
+          echo "\n" > pkg/module/go.sum
+        fi
+      # Инициализация создаем go.sum для винды если его нет
+    - name: go.sum [windows] init
+      if: ${{ matrix.os == 'windows-latest' }}
+      run: |
+        if (-not (Test-Path "go.sum")) {
+          echo "File 'go.sum' does not exist. Creating..."
+          echo "\n" > "go.sum"
+        }
+        if (-not (Test-Path "pkg\module\go.sum")) {
+          echo "File 'pkg\module\go.sum' does not exist. Creating..."
+          echo "\n" > "pkg\module\go.sum"
+        }
+        
+
       # Инициализация Go
     - name: Goland init
       uses: actions/setup-go@v5
