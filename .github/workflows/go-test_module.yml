@@ -34,4 +34,4 @@ jobs:
       
 
     - name: Start Test
-      run: go test -v -args 'logLVL=panic' ./pkg/module
+      run: go test -v ./pkg/module -args 'logLVL=panic'
