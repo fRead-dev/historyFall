@@ -71,14 +71,26 @@ jobs:
         check-latest: true
 
 
-      # Инициализация создаем go.sum если его нет
-    - name: go.sum init
+      # Инициализация создаем go.sum для линукса и мака если его нет
+    - name: go.sum [macos, ubuntu] init
+      if: ${{ matrix.os == 'macos-latest' || matrix.os == 'ubuntu-latest' }}
       run: |
         if [ ! -f "go.sum" ]; then
           go mod tidy
         fi
         if [ ! -f "pkg/module/go.sum" ]; then
           cd pkg/module/
+          go mod tidy
+        fi
+      # Инициализация создаем go.sum для винды если его нет
+    - name: go.sum [windows] init
+      if: ${{ matrix.os == 'windows-latest' }}
+      run: |
+        if [ ! -f "go.sum" ]; then
+          go mod tidy
+        fi
+        if [ ! -f "pkg/module/go.sum" ]; then
+          cd pkg\module\
           go mod tidy
         fi
         
