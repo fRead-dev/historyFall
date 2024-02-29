@@ -34,16 +34,14 @@ func __TEST__readLVL() zapcore.LevelEnabler {
 	lvl := ""
 
 	for _, arg := range os.Args[1:] {
-		if arg[:1] == "-" {
-			ss := strings.Split(arg[1:], "=")
-			switch ss[0] {
-			case "logLVL":
-				lvl = ss[1]
-				break
-			}
-
-			fmt.Println(ss)
+		ss := strings.Split(arg, "=")
+		switch ss[0] {
+		case "logLVL":
+			lvl = ss[1]
+			break
 		}
+
+		fmt.Println(ss)
 	}
 
 	if len(lvl) == 0 {
