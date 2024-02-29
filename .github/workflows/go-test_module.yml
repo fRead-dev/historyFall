@@ -16,14 +16,15 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
-    - name: Cache Go dependencies
-      uses: actions/cache@v2
+    
+    - uses: actions/cache@v3
       with:
-            path: /home/runner/go/pkg/mod
-            key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-            restore-keys: |
-              ${{ runner.os }}-go-
-
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
 
     - name: Set up Goland
       uses: actions/setup-go@v5
