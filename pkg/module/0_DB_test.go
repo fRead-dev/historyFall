@@ -3,6 +3,7 @@ package module
 
 import (
 	"go.uber.org/zap"
+	"strconv"
 	"testing"
 )
 
@@ -42,10 +43,14 @@ func Test_readWriteDB(t *testing.T) {
 		"testName3",
 		"testName4",
 	}
-	for _, file := range files {
+	for pos, file := range files {
 		oldText := []byte(test.generateText(4))
 		newText := []byte(test.generateText(4))
 		vectorID := obj.AddUpdPKG(&file, &oldText, &newText)
-		test.pI("Add", zap.Any("vectorID", vectorID), zap.Any("file", file))
+
+		//Проверка на валидное добавление с обновлением
+		test.fail(vectorID == uint32((pos+1)*2), "AddUpdPKG", file, strconv.Itoa(int(vectorID))+" = "+strconv.Itoa((pos+1)*2))
+
+		db.Vector.
 	}
 }

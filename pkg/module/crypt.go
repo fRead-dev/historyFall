@@ -1,17 +1,20 @@
 package module
 
 import (
+	"bytes"
+	"compress/flate"
 	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"io"
+	"io/ioutil"
 	"os"
 	"unsafe"
 )
 
-// Получение sha-1 строки из строки
+/* Получение sha-1 строки из строки */
 func SHA1(text string) string {
 	if len(text) == 0 {
 		return ""
@@ -22,7 +25,7 @@ func SHA1(text string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-// Получение контрольной суммы файла
+/* Получение контрольной суммы файла */
 func SHA256file(filePath string) string {
 
 	// Открываем файл
@@ -46,6 +49,51 @@ func SHA256file(filePath string) string {
 
 	// Преобразуем хеш-сумму в строку в шестнадцатеричном формате
 	return fmt.Sprintf("%x", hashBytes)
+}
+
+//.//
+
+// Compressed Сжимает данные по ссылке
+func Compressed(data *[]byte) []byte {
+	var compressed bytes.Buffer
+
+	writer, _ := flate.NewWriter(&compressed, flate.BestCompression)
+	writer.Write(*data)
+	writer.Close()
+
+	return compressed.Bytes()
+}
+
+// CompressedSB Сжимает данные по ссылке
+func CompressedSB(data *string) []byte {
+	buf := []byte(*data)
+	return Compressed(&buf)
+}
+
+// CompressedS Сжимает данные по ссылке
+func CompressedS(data *string) string {
+	return string(CompressedSB(data))
+}
+
+// Decompressed Расжимает данные по ссылке
+func Decompressed(data *[]byte) []byte {
+	reader := flate.NewReader(bytes.NewReader(*data))
+
+	decompressed, _ := ioutil.ReadAll(reader)
+	reader.Close()
+
+	return decompressed
+}
+
+// DecompressedSB Расжимает данные по ссылке
+func DecompressedSB(data *string) []byte {
+	buf := []byte(*data)
+	return Decompressed(&buf)
+}
+
+// DecompressedS Расжимает данные по ссылке
+func DecompressedS(data *string) string {
+	return string(DecompressedSB(data))
 }
 
 //.//

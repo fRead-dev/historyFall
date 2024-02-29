@@ -119,6 +119,9 @@ func (obj *_historyFall_dbTimeline) Get(id uint32) (database_hf_timeline, bool) 
 	if status {
 		comment := obj.getComment(id)
 		if comment != nil {
+
+			//	Расжатие коментария
+			comment = Decompressed(&comment)
 			retObj.Comment = &comment
 		}
 	}
@@ -185,6 +188,25 @@ func (obj *_historyFall_dbTimeline) Add(fileID uint32, vectorID uint32) uint32 {
 	tx.End()
 
 	return 0
+}
+
+/* Добавление новой точки С коментарием к ней */
+func (obj *_historyFall_dbTimeline) AddComment(fileID uint32, vectorID uint32, comment *[]byte) uint32 {
+	id := obj.Add(fileID, vectorID)
+
+	//	Сжатие
+	zipComment := Compressed(comment)
+
+	//Запись
+	tx := obj.globalObj.beginTransaction("Timeline:AddComment")
+	tx.Exec(
+		"INSERT INTO `database_hf_timelineComments` (`id`, `data`) VALUES (?, ?);",
+		id,
+		zipComment,
+	)
+	tx.End()
+
+	return id
 }
 
 // /	#############################################################################################	///
