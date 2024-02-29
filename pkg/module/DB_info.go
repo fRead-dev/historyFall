@@ -1,8 +1,6 @@
 package module
 
 import (
-	"database/sql"
-	"errors"
 	"go.uber.org/zap"
 	"regexp"
 	"strconv"
@@ -28,10 +26,7 @@ func (obj localSQLiteObj) getInfo(name string) (string, bool) {
 
 	err := obj.db.QueryRow("SELECT `data` FROM `database_hf_info` WHERE `name`=?", name).Scan(&value)
 	if err != nil {
-		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
-			obj.log.Error("DB", zap.String("func", "getInfo"), zap.Error(err))
-		}
-
+		obj.log.Error("DB", zap.String("func", "getInfo"), zap.Error(err))
 		return "", false
 	}
 
@@ -46,7 +41,7 @@ type _historyFall_dbVersion struct {
 }
 
 /*	Версия инициализированый сборки	*/
-func (obj _historyFall_dbVersion) GetVersion() string {
+func (obj _historyFall_dbVersion) Get() string {
 	version, status := obj.globalObj.getInfo("ver")
 
 	if status {
@@ -57,7 +52,7 @@ func (obj _historyFall_dbVersion) GetVersion() string {
 }
 
 /*	Установка версии автоматом из константы c предпроверкой	*/
-func (obj _historyFall_dbVersion) SetVersion() {
+func (obj _historyFall_dbVersion) Set() {
 	status := database_Sync(obj.globalObj.db, obj.globalObj.log, false)
 	if status {
 		obj.globalObj.setInfo("ver", constVersionHistoryFall)
@@ -69,13 +64,10 @@ type _historyFall_dbExtensions struct {
 	globalObj *localSQLiteObj
 
 	list []string //Допустимые расширения файлов
-
-	Get func() []string
-	Set func([]string)
 }
 
 /*	Разрещенные расширения файлов	*/
-func (obj _historyFall_dbExtensions) GetExtensions() []string {
+func (obj _historyFall_dbExtensions) Get() []string {
 	extensions, status := obj.globalObj.getInfo("extensions")
 
 	if status {
@@ -86,7 +78,7 @@ func (obj _historyFall_dbExtensions) GetExtensions() []string {
 }
 
 /* Установка расширений */
-func (obj _historyFall_dbExtensions) SetExtensions(arr []string) {
+func (obj _historyFall_dbExtensions) Set(arr []string) {
 	var filtered []string
 	re := regexp.MustCompile("[a-z0-9]+")
 
