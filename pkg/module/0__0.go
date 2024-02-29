@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
 	"os"
+	"strings"
 	"testing"
 	"unsafe"
 )
@@ -27,6 +28,23 @@ func __TEST__Init(t *testing.T, enab zapcore.LevelEnabler) __TEST__globalObj {
 	)
 	obj.t = t
 	return obj
+}
+func __TEST__readLVL() zapcore.LevelEnabler {
+	if len(os.Args) < 2 {
+		return zap.DebugLevel
+	}
+	switch strings.ToLower(os.Args[1]) {
+	case "error":
+		return zap.ErrorLevel
+	case "warn":
+		return zap.WarnLevel
+	case "info":
+		return zap.InfoLevel
+	case "debug":
+		return zap.DebugLevel
+	}
+
+	return zap.InfoLevel
 }
 
 func (obj *__TEST__globalObj) generateText(paragraphs uint16) string {

@@ -3,7 +3,6 @@ package module
 
 import (
 	"github.com/bxcodec/faker/v3"
-	"go.uber.org/zap"
 	"strconv"
 	"strings"
 	"testing"
@@ -11,7 +10,7 @@ import (
 )
 
 func Test_initDB(t *testing.T) {
-	test := __TEST__Init(t, zap.DebugLevel)
+	test := __TEST__Init(t, __TEST__readLVL())
 	defer test.Close()
 
 	db := initDB(test.log, "__TEST__", "", false)
@@ -30,7 +29,7 @@ func Test_initDB(t *testing.T) {
 }
 
 func Test_readWriteDB(t *testing.T) {
-	test := __TEST__Init(t, zap.DebugLevel)
+	test := __TEST__Init(t, __TEST__readLVL())
 	defer test.Close()
 
 	db := initDB(test.log, "__TEST__", "", true)
