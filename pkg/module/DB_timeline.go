@@ -230,10 +230,16 @@ func (obj *_historyFall_dbTimeline) SearchFile(fileID uint32, minVersion uint16,
 }
 
 /* Получение вектора за временной промежуток */
-func (obj *_historyFall_dbTimeline) SearchTime(fileID uint32, beginTimestamp uint64, endTimestamp uint64) []uint32 {
+func (obj *_historyFall_dbTimeline) SearchTime(fileID uint32, begin time.Time, end time.Time) []uint32 {
 	if fileID == 0 {
 		return []uint32{}
 	}
+
+	//	Переводим время в метку
+	beginTimestamp := uint64(begin.UTC().UnixMicro())
+	endTimestamp := uint64(end.UTC().UnixMicro())
+
+	//	Если верхний предел ниже нижнего то убираем его
 	if beginTimestamp <= endTimestamp {
 		endTimestamp = 9999999999999999999
 	}
