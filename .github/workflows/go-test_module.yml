@@ -65,23 +65,23 @@ jobs:
       run: |
         if [ ! -f "go.sum" ]; then
           echo "File 'go.sum' does not exist. Creating..."
-          echo "" > go.sum
+          echo "\n" > go.sum
         fi
         if [ ! -f "pkg/module/go.sum" ]; then
           echo "File 'pkg/module/go.sum' does not exist. Creating..."
-          echo "" > pkg/module/go.sum
+          echo "\n" > pkg/module/go.sum
         fi
 
     - name: go.sum [windows] init
       if: ${{ matrix.os == 'windows-latest' }}
       run: |
-        IF (NOT EXIST "go.sum") {
+        if (-not (Test-Path "go.sum")) {
           echo "File 'go.sum' does not exist. Creating..."
-          echo "" > "go.sum"
+          echo "\n" > "go.sum"
         }
-        IF (NOT EXIST "pkg\module\go.sum"){
+        if (-not (Test-Path "pkg\module\go.sum")) {
           echo "File 'pkg\module\go.sum' does not exist. Creating..."
-          echo "" > "pkg\module\go.sum"
+          echo "\n" > "pkg\module\go.sum"
         }
 
 
