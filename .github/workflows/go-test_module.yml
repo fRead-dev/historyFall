@@ -60,8 +60,8 @@ jobs:
           ${{ runner.os }}-go-
 
 
-    - name: go.sum [macos, windows] init
-      if: ${{ matrix.os == 'macos-latest' || matrix.os == 'windows-latest' }}
+    - name: go.sum [macos, ubuntu] init
+      if: ${{ matrix.os == 'macos-latest' || matrix.os == 'ubuntu-latest' }}
       run: |
         if [ ! -f "go.sum" ]; then
           echo "File 'go.sum' does not exist. Creating..."
