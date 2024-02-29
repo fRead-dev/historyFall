@@ -2,6 +2,7 @@
 package module
 
 import (
+	"fmt"
 	"github.com/bxcodec/faker/v3"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -40,6 +41,8 @@ func __TEST__readLVL() zapcore.LevelEnabler {
 				lvl = ss[1]
 				break
 			}
+
+			fmt.Println(ss)
 		}
 	}
 
