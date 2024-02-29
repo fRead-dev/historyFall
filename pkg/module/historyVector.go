@@ -1,8 +1,6 @@
 package module
 
 import (
-	"bytes"
-	"compress/flate"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"io/ioutil"
 	"os"
@@ -32,12 +30,7 @@ func generateStoryVector(oldText *[]byte, newText *[]byte) []byte {
 	}
 
 	//	Сжатие
-	var compressed bytes.Buffer
-	writer, _ := flate.NewWriter(&compressed, flate.BestCompression)
-	writer.Write([]byte(vector))
-	writer.Close()
-
-	return compressed.Bytes()
+	return CompressedSB(&vector)
 }
 
 // сравнение двух файлов и получение текстового вектора изменений
@@ -63,10 +56,7 @@ func Comparison(oldFile string, newFile string) ([]byte, error) {
 func GenerateFileFromVector(comparison *[]byte, defFilePath string, saveNewFilePath string) error {
 
 	//	Расжатие вектора
-	reader := flate.NewReader(bytes.NewReader(*comparison))
-	decompressed, _ := ioutil.ReadAll(reader)
-	reader.Close()
-	vector := string(decompressed)
+	vector := string(Decompressed(comparison))
 
 	//	Чтение исходного файла
 	var oldFileBytes []byte
