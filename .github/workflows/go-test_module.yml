@@ -1,4 +1,4 @@
-name: Global Test
+name: History  Fall project
 
 on:
   push:
@@ -13,20 +13,26 @@ on:
 
 
 jobs:
-  test-module:
+  init-project:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
-
-    
+        os: [ macos-latest, windows-latest, ubuntu-latest ]
     steps:
-    - name: Action init
-      uses: actions/checkout@v4
+      - name: Action init
+        uses: actions/checkout@v4
 
+#####################################################################################################
 
-     # Инициализация кеша для линукса
+  cache:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ${{ matrix.os }}
+    needs: init-project
+    steps:
+
     - name: Cache [ubuntu] init
       if: ${{ matrix.os == 'ubuntu-latest' }}
       uses: actions/cache@v4
@@ -38,7 +44,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-
 
-      # Инициализация кеша для мака
     - name: Cache [macos] init
       if: ${{ matrix.os == 'macos-latest' }}
       uses: actions/cache@v4
@@ -50,7 +55,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-
 
-      # Инициализация кеша для винды
     - name: Cache [windows] init
       if: ${{ matrix.os == 'windows-latest' }}
       uses: actions/cache@v4
@@ -62,16 +66,22 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-go-
         
+#####################################################################################################
 
-      # Инициализация Go
+  go-init:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ${{ matrix.os }}
+    needs: cache
+    steps:
+
     - name: Goland init
       uses: actions/setup-go@v5
       with:
         go-version: '1.21'
         check-latest: true
 
-
-      # Инициализация создаем go.sum для линукса и мака если его нет
     - name: go.sum [macos, ubuntu] init
       if: ${{ matrix.os == 'macos-latest' || matrix.os == 'ubuntu-latest' }}
       run: |
@@ -84,7 +94,6 @@ jobs:
         fi
       working-directory: ${{ github.workspace }}
 
-      # Инициализация создаем go.sum для винды если его нет
     - name: go.sum [windows] init
       if: ${{ matrix.os == 'windows-latest' }}
       run: |
@@ -96,9 +105,31 @@ jobs:
           go mod tidy
         }
       working-directory: ${{ github.workspace }}
+
+#####################################################################################################
         
-        
-      
-      # Инициализация Запускаем тест для модуля
+  test-modules:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ${{ matrix.os }}
+    needs: go-init
+    steps:
+
     - name: Start Test
       run: go test -v ./pkg/module -args 'logLVL=panic'
+
+#####################################################################################################
+
+  cache-again:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: ${{ matrix.os }}
+
+    needs: [ cache, go-init ]
+
+    steps:
+      - name: Cache UPD
+        uses: ./.github/actions/cache
