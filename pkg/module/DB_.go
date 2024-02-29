@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -41,7 +42,6 @@ func initDB(log *zap.Logger, dir string, name string, autoFix bool) localSQLiteO
 	if dir == "__TEST__" {
 		dbFilePath = ":memory:"
 	} else {
-		dbFilePath = dir + "/" + fileName
 
 		//	Проверка имени файла на соотвествие ожидаемого
 		if !IsValidFileType(fileName, constHistoryFallExtensions) {
@@ -51,6 +51,8 @@ func initDB(log *zap.Logger, dir string, name string, autoFix bool) localSQLiteO
 				log.Fatal("File extension not supported!")
 			}
 		}
+
+		dbFilePath = filepath.Clean(dir + "/" + fileName)
 	}
 	log.Debug("DB", zap.String("path", dbFilePath))
 
