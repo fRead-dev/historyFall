@@ -33,7 +33,8 @@ jobs:
       
 
     - name: Start Test
-      run: go test -v ./pkg/module ${{ env.ARGUMENTS }}
+      run: go test ${{ env.ARGUMENTS }}
       env:
         ARGUMENTS: |
-          -args 'panic'
+          -v ./pkg/module
+          -args 'logLVL=panic'
