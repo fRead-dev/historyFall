@@ -33,6 +33,10 @@ func __TEST__Init(t *testing.T, enab zapcore.LevelEnabler) __TEST__globalObj {
 func __TEST__readLVL() zapcore.LevelEnabler {
 	args := os.Args[1:]
 
+	for _, arg := range args {
+		fmt.Println(arg)
+	}
+
 	switch strings.ToLower(args[2]) {
 	case "panic":
 		fmt.Println("SET LVL: " + zap.DPanicLevel.String())
