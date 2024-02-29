@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func Test_initDB(t *testing.T) {
@@ -43,6 +44,13 @@ func Test_readWriteDB(t *testing.T) {
 	//	Версия сборки
 	ver := db.Version.Get()
 	test.fail(ver == constVersionHistoryFall, "Version", ver, constVersionHistoryFall)
+	currentTime := time.Now().UTC().UnixMicro() - int64(time.Second)
+
+	//	Время создания
+	test.fail(db.Create() > uint64(currentTime), "currentTime", strconv.FormatUint(db.Create(), 10)+" > "+strconv.FormatInt(currentTime, 10))
+
+	//	Время изменения
+	test.fail(db.Create() == db.Update(), "timeUPD:DEF", strconv.FormatUint(db.Create(), 10)+" = "+strconv.FormatUint(db.Update(), 10))
 
 	//	Расширения файлов поддерживаемые
 	extensions := db.Extensions.Get()
@@ -69,6 +77,9 @@ func Test_readWriteDB(t *testing.T) {
 		strings.Join(newExtensions, ", "),
 	)
 	db.Extensions.Set(constTextExtensions)
+
+	//	Время изменения после изменений
+	test.fail(db.Create() != db.Update(), "timeUPD:EDIT", strconv.FormatUint(db.Create(), 10)+" != "+strconv.FormatUint(db.Update(), 10))
 
 	/**/
 

@@ -14,7 +14,7 @@ func (obj localSQLiteObj) setInfo(name string, value string) {
 
 	tx.Exec("UPDATE `database_hf_info` SET `data` = ? WHERE `name` = ?;", value, name)
 
-	currentTime := time.Now().UTC().Unix()
+	currentTime := time.Now().UTC().UnixMicro()
 	tx.Exec("UPDATE `database_hf_info` SET `data` = ? WHERE `name` = 'upd';", strconv.FormatInt(currentTime, 10))
 
 	tx.End()
@@ -88,4 +88,30 @@ func (obj _historyFall_dbExtensions) Set(arr []string) {
 	}
 
 	obj.globalObj.setInfo("extensions", strings.Join(filtered, "."))
+}
+
+// /	#############################################################################################	///
+
+// getCreate Получение TIMESTAMP создания
+func (obj localSQLiteObj) getCreate() uint64 {
+	value, status := obj.getInfo("create")
+
+	if status {
+		num, _ := strconv.ParseUint(value, 10, 64)
+		return num
+	} else {
+		return 0
+	}
+}
+
+// getUpdate	Получение TIMESTAMP последнего обновления настоек
+func (obj localSQLiteObj) getUpdate() uint64 {
+	value, status := obj.getInfo("upd")
+
+	if status {
+		num, _ := strconv.ParseUint(value, 10, 64)
+		return num
+	} else {
+		return 0
+	}
 }

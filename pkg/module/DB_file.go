@@ -72,7 +72,7 @@ func (obj *_historyFall_dbFile) updVector(id uint32, isDel bool, beginVectorID u
 	}
 
 	tx := obj.globalObj.beginTransaction("File:upd")
-	currentTime := time.Now().UTC().Unix()
+	currentTime := time.Now().UTC().UnixMicro()
 
 	tx.Exec(
 		"UPDATE `database_hf_pkg` SET `time` = ?, `isDel`=?, `begin`=? WHERE `id` = ?;",
@@ -91,7 +91,7 @@ func (obj *_historyFall_dbFile) add(fileName *string, isDel bool, beginVectorID 
 	}
 
 	tx := obj.globalObj.beginTransaction("File:add")
-	currentTime := time.Now().UTC().Unix()
+	currentTime := time.Now().UTC().UnixMicro()
 
 	tx.Exec(
 		"INSERT INTO `database_hf_pkg` (`key`, `isDel`, `time`, `begin`) VALUES (?, ?, ?, ?);",
@@ -207,7 +207,7 @@ func (obj *_historyFall_dbFile) UpdIsDel(id uint32, isDel bool) {
 	}
 
 	tx := obj.globalObj.beginTransaction("File:UpdIsDel")
-	currentTime := time.Now().UTC().Unix()
+	currentTime := time.Now().UTC().UnixMicro()
 
 	tx.Exec(
 		"UPDATE `database_hf_pkg` SET `time` = ?, `isDel`=? WHERE `id` = ?;",

@@ -19,6 +19,8 @@ type localSQLiteObj struct {
 
 	Extensions _historyFall_dbExtensions
 	Version    _historyFall_dbVersion
+	Create     func() uint64
+	Update     func() uint64
 
 	SHA      _historyFall_dbSHA
 	Vector   _historyFall_dbVector
@@ -74,6 +76,8 @@ func initDB(log *zap.Logger, dir string, name string, autoFix bool) localSQLiteO
 
 	obj.Extensions = _historyFall_dbExtensions{globalObj: &obj}
 	obj.Version = _historyFall_dbVersion{globalObj: &obj}
+	obj.Create = func() uint64 { return obj.getCreate() }
+	obj.Update = func() uint64 { return obj.getUpdate() }
 
 	obj.SHA = _historyFall_dbSHA{globalObj: &obj}
 	obj.Vector = _historyFall_dbVector{globalObj: &obj}
@@ -157,7 +161,7 @@ func (obj localSQLiteObj) initValues() {
 	obj.log.Info("Start initValues DB")
 
 	tx := obj.beginTransaction("initValues")
-	currentTime := time.Now().UTC().Unix()
+	currentTime := time.Now().UTC().UnixMicro()
 
 	infoTable := []string{
 		"'ver', '" + constVersionHistoryFall + "'",

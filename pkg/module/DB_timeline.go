@@ -175,7 +175,7 @@ func (obj *_historyFall_dbTimeline) Add(fileID uint32, vectorID uint32) uint32 {
 	}
 
 	version++
-	currentTime := time.Now().UTC().Unix()
+	currentTime := time.Now().UTC().UnixMicro()
 	tx := obj.globalObj.beginTransaction("Timeline:Add")
 
 	tx.Exec(
