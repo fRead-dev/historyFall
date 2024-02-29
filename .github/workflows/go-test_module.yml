@@ -67,10 +67,23 @@ jobs:
           echo "File 'go.sum' does not exist. Creating..."
           echo "" > go.sum
         fi
-        if [ ! -f "./pkg/module/go.sum" ]; then
-          echo "File './pkg/module/go.sum' does not exist. Creating..."
-          echo "" > ./pkg/module/go.sum
+        if [ ! -f "pkg/module/go.sum" ]; then
+          echo "File 'pkg/module/go.sum' does not exist. Creating..."
+          echo "" > pkg/module/go.sum
         fi
+
+    - name: go.sum [windows] init
+      if: ${{ matrix.os == 'windows-latest' }}
+      run: |
+        if not exist "go.sum" (
+          echo "File 'go.sum' does not exist. Creating..."
+          echo "" > "go.sum"
+        )
+        if not exist "pkg\module\go.sum" (
+          echo "File 'pkg\module\go.sum' does not exist. Creating..."
+          echo "" > "pkg\module\go.sum"
+        )
+
 
     - name: Goland init
       uses: actions/setup-go@v5
