@@ -114,8 +114,8 @@ func (obj __TEST__DB_globalObj) beginTransaction(funcName string) databaseTransa
 
 //#################################################################################################################################//
 
-// addUpdPKG сохраняем изменения в базу по файлу
-func (obj __TEST__DB_globalObj) addUpdPKG(fileName *string, oldText *[]byte, newText *[]byte) uint32 {
+// AddUpdPKG сохраняем изменения в базу по файлу
+func (obj __TEST__DB_globalObj) AddUpdPKG(fileName *string, oldText *[]byte, newText *[]byte) uint32 {
 	hashOld := SHA1(string(*oldText))
 	hashNew := SHA1(string(*newText))
 
