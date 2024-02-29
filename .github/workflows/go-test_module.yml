@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Action init
-    - uses: actions/checkout@v3
+      uses: actions/checkout@v3
     
     - name: Cache init
-    - uses: actions/cache@v3
+      uses: actions/cache@v3
       with:
         path: |
           ~/.cache/go-build
