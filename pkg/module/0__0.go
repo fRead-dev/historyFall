@@ -2,6 +2,7 @@
 package module
 
 import (
+	"fmt"
 	"github.com/bxcodec/faker/v3"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -32,16 +33,25 @@ func __TEST__Init(t *testing.T, enab zapcore.LevelEnabler) __TEST__globalObj {
 func __TEST__readLVL() zapcore.LevelEnabler {
 	args := os.Args[1:]
 
-	switch strings.ToLower(args[0]) {
+	switch strings.ToLower(args[2]) {
 	case "panic":
+		fmt.Println("SET LVL: " + zap.DPanicLevel.String())
 		return zap.DPanicLevel
+
 	case "error":
+		fmt.Println("SET LVL: " + zap.ErrorLevel.String())
 		return zap.ErrorLevel
+
 	case "warn":
+		fmt.Println("SET LVL: " + zap.WarnLevel.String())
 		return zap.WarnLevel
+
 	case "info":
+		fmt.Println("SET LVL: " + zap.InfoLevel.String())
 		return zap.InfoLevel
+
 	case "debug":
+		fmt.Println("SET LVL: " + zap.DebugLevel.String())
 		return zap.DebugLevel
 	}
 
