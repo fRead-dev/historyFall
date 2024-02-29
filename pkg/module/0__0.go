@@ -2,7 +2,6 @@
 package module
 
 import (
-	"fmt"
 	"github.com/bxcodec/faker/v3"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -31,31 +30,33 @@ func __TEST__Init(t *testing.T, enab zapcore.LevelEnabler) __TEST__globalObj {
 	return obj
 }
 func __TEST__readLVL() zapcore.LevelEnabler {
-	args := os.Args[1:]
+	lvl := ""
 
-	for _, arg := range args {
-		fmt.Println(arg)
+	for _, arg := range os.Args[1:] {
+		if arg[:1] == "-" {
+			ss := strings.Split(arg[1:], "=")
+			switch ss[0] {
+			case "logLVL":
+				lvl = ss[1]
+				break
+			}
+		}
 	}
 
-	switch strings.ToLower(args[2]) {
-	case "panic":
-		fmt.Println("SET LVL: " + zap.DPanicLevel.String())
-		return zap.DPanicLevel
-
-	case "error":
-		fmt.Println("SET LVL: " + zap.ErrorLevel.String())
-		return zap.ErrorLevel
-
-	case "warn":
-		fmt.Println("SET LVL: " + zap.WarnLevel.String())
+	if len(lvl) == 0 {
 		return zap.WarnLevel
+	}
 
+	switch strings.ToLower(lvl) {
+	case "panic":
+		return zap.DPanicLevel
+	case "error":
+		return zap.ErrorLevel
+	case "warn":
+		return zap.WarnLevel
 	case "info":
-		fmt.Println("SET LVL: " + zap.InfoLevel.String())
 		return zap.InfoLevel
-
 	case "debug":
-		fmt.Println("SET LVL: " + zap.DebugLevel.String())
 		return zap.DebugLevel
 	}
 
