@@ -82,6 +82,8 @@ jobs:
           cd pkg/module/
           go mod tidy
         fi
+      working-directory: ${{ github.workspace }}
+
       # Инициализация создаем go.sum для винды если его нет
     - name: go.sum [windows] init
       if: ${{ matrix.os == 'windows-latest' }}
@@ -93,6 +95,7 @@ jobs:
           cd pkg\module\
           go mod tidy
         }
+      working-directory: ${{ github.workspace }}
         
         
       
