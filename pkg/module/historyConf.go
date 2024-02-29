@@ -2,16 +2,11 @@ package module
 
 import "go.uber.org/zap"
 
-// Список названий таблиц используемых в базе
-var constTablesFromDB = []string{
-	"info",
-	"sha",
-	"pkg",
-	"vectors",
-	"timeline",
+var constHistoryFallExtensions = []string{
+	"hf",
 }
 
-// Расширение тектовых файлов с которыми работает модуль
+// Расширение тектовых файлов с которыми работает модуль по умолчанию
 var constTextExtensions = []string{
 	"txt",
 	"md",
@@ -41,5 +36,12 @@ type HistoryFallObj struct {
 	log *zap.Logger
 	dir string
 
-	sql *localSQLiteObj
+	sqlInit bool
+	sql     *localSQLiteObj
 }
+
+//#################################################################################################################################//
+
+// Пустые глобальные переменные для ссылок на них
+var NULL_B []byte = []byte("")
+var NULL_S string = ""

@@ -1,18 +1,20 @@
 package module
 
 import (
+	"bytes"
+	"compress/flate"
 	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/sergi/go-diff/diffmatchpatch"
 	"io"
+	"io/ioutil"
 	"os"
-	"regexp"
-	"strings"
-	"unicode/utf8"
+	"unsafe"
 )
 
-// Получение sha-1 строки из строки
+/* Получение sha-1 строки из строки */
 func SHA1(text string) string {
 	if len(text) == 0 {
 		return ""
@@ -23,7 +25,7 @@ func SHA1(text string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-// Получение контрольной суммы файла
+/* Получение контрольной суммы файла */
 func SHA256file(filePath string) string {
 
 	// Открываем файл
@@ -49,20 +51,110 @@ func SHA256file(filePath string) string {
 	return fmt.Sprintf("%x", hashBytes)
 }
 
-// Получение валидного имени файла
-func ValidFileName(name string, maxLength int) string {
+//.//
 
-	// Удаляем недопустимые символы и пробелы, заменяем пробелы на подчеркивания
-	reg := regexp.MustCompile("[^\\p{L}0-9.-]+")
-	validFileName := reg.ReplaceAllString(name, "_")
+// Compressed Сжимает данные по ссылке
+func Compressed(data *[]byte) []byte {
+	var compressed bytes.Buffer
 
-	// Переводим весь текст в нижний регистр
-	validFileName = strings.ToLower(validFileName)
+	writer, _ := flate.NewWriter(&compressed, flate.BestCompression)
+	writer.Write(*data)
+	writer.Close()
 
-	// Обрезаем строку, если ее длина превышает maxLength
-	if utf8.RuneCountInString(validFileName) > maxLength {
-		validFileName = validFileName[:maxLength]
+	return compressed.Bytes()
+}
+
+// CompressedSB Сжимает данные по ссылке
+func CompressedSB(data *string) []byte {
+	buf := []byte(*data)
+	return Compressed(&buf)
+}
+
+// CompressedS Сжимает данные по ссылке
+func CompressedS(data *string) string {
+	return string(CompressedSB(data))
+}
+
+// Decompressed Расжимает данные по ссылке
+func Decompressed(data *[]byte) []byte {
+	reader := flate.NewReader(bytes.NewReader(*data))
+
+	decompressed, _ := ioutil.ReadAll(reader)
+	reader.Close()
+
+	return decompressed
+}
+
+// DecompressedSB Расжимает данные по ссылке
+func DecompressedSB(data *string) []byte {
+	buf := []byte(*data)
+	return Decompressed(&buf)
+}
+
+// DecompressedS Расжимает данные по ссылке
+func DecompressedS(data *string) string {
+	return string(DecompressedSB(data))
+}
+
+//.//
+
+//todo написать потом метод для обработки файлов напрямую
+
+// Расчет расхождения между полученными строками
+func MachDiff(firstText *string, secondText *string) uint16 {
+	dmp := diffmatchpatch.New()
+	diffs := dmp.DiffMain(*firstText, *secondText, false)
+
+	// Вычисляем общее количество символов в обоих файлах
+	totalChars := uint64(0)
+	for _, diff := range diffs {
+		totalChars += uint64(unsafe.Sizeof(diff.Text))
 	}
 
-	return validFileName
+	// Вычисляем количество общих символов
+	sharedChars := uint64(0)
+	for _, diff := range diffs {
+		if diff.Type == diffmatchpatch.DiffEqual {
+			sharedChars += uint64(unsafe.Sizeof(diff.Text))
+		}
+	}
+
+	//	Увеличение счетчика для слишком маленьких файлов
+	if sharedChars < 1000 || totalChars < 1000 {
+		sharedChars *= 1000
+		totalChars *= 1000
+	}
+
+	// Вычисляем степень сходства как отношение общих символов к общему количеству символов
+	if totalChars > 0 {
+		buf := float64(sharedChars) / float64(totalChars)
+		return uint16(buf * 1000)
+	}
+
+	return 0
+}
+
+// Получение массива с контрольными суммами совпадений между полученными строками
+func MachDiffHashArr(firstText *string, secondText *string) []string {
+	var array []string
+
+	dmp := diffmatchpatch.New()
+	diffs := dmp.DiffMain(*firstText, *secondText, false)
+
+	// Вычисляем общее количество символов в обоих файлах
+	totalChars := uint64(0)
+	for _, diff := range diffs {
+		totalChars += uint64(unsafe.Sizeof(diff.Text))
+	}
+
+	// Формируем массив совпадений
+	for _, diff := range diffs {
+		if diff.Type == diffmatchpatch.DiffEqual {
+			if unsafe.Sizeof(diff.Text) > 0 {
+				array = append(array, SHA1(diff.Text))
+			}
+		}
+	}
+
+	return array
 }

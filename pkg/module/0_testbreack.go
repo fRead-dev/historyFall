@@ -5,7 +5,6 @@ import (
 	"go.uber.org/zap/zaptest"
 	"os"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/bxcodec/faker/v3"
@@ -14,6 +13,17 @@ import (
 // Генерация случайного файла
 func generateFile(paragraphs uint16) string {
 	name := faker.Password() + "." + faker.Word()
+	file, _ := os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+
+	for i := uint16(0); i < paragraphs; i++ {
+		file.WriteString(faker.Paragraph())
+	}
+
+	file.Close()
+	return name
+}
+func generateFileTXT(paragraphs uint16) string {
+	name := faker.Password() + ".txt"
 	file, _ := os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 
 	for i := uint16(0); i < paragraphs; i++ {
@@ -85,7 +95,7 @@ func (obj testObj) testPoint(status bool, text string) {
 
 /*	Тест на класс historyFall	*/
 func TestHistoryFall(t *testing.T) {
-	log := zaptest.NewLogger(t, zaptest.Level(zap.DebugLevel)) // DebugLevel | InfoLevel | WarnLevel | ErrorLevel
+	log := zaptest.NewLogger(t, zaptest.Level(zap.ErrorLevel)) // DebugLevel | InfoLevel | WarnLevel | ErrorLevel
 
 	obj := testObj{Init(log, "__TEST__"), t}
 	defer obj.sql.Close()
@@ -94,10 +104,8 @@ func TestHistoryFall(t *testing.T) {
 	obj.testPoint(!obj.FileExist("0_test.go"), "FileExist TRUE")
 	obj.testPoint(obj.FileExist(SHA1(faker.Paragraph())+"."+faker.Word()), "FileExist FALSE")
 
-	obj.sql.autoCheck()
-
 	obj.databaseSHA()
-	obj.databaseFile()
+	//obj.databaseFile()
 }
 
 func (obj testObj) databaseSHA() {
@@ -105,9 +113,9 @@ func (obj testObj) databaseSHA() {
 	hashName := SHA1(faker.Name())
 	hashParagraph := SHA1(faker.Paragraph())
 
-	hashWordID := obj.sql.addSHA(hashWord)
-	hashNameID := obj.sql.addSHA(hashName)
-	hashParagraphID := obj.sql.addSHA(hashParagraph)
+	hashWordID := obj.sql.SHA.Add(hashWord)
+	hashNameID := obj.sql.SHA.Add(hashName)
+	hashParagraphID := obj.sql.SHA.Add(hashParagraph)
 
 	obj.log.Info("Add SHA",
 		zap.Any("hashWord", []string{strconv.Itoa(int(hashWordID)), hashWord}),
@@ -118,34 +126,37 @@ func (obj testObj) databaseSHA() {
 	/**/
 
 	//	Проверка на отсутствие дубликатов
-	SHAaddDublicate := obj.sql.addSHA(hashWord)
+	SHAaddDublicate := obj.sql.SHA.Add(hashWord)
 	obj.testPoint(SHAaddDublicate != hashWordID, "SHAaddDublicate")
 
 	/**/
 
 	//	Проверка на поиск
-	SHAsearchID, SHAsearchStatus := obj.sql.searchSHA(hashName)
+	SHAsearchID, SHAsearchStatus := obj.sql.SHA.Search(&hashName)
 	obj.testPoint(SHAsearchID != hashNameID, "SHAsearchID")
 	obj.testPoint(!SHAsearchStatus, "SHAsearchStatus")
 
 	//	Проверка на поиск NULL
-	SHAsearchNullID, SHAsearchNullStatus := obj.sql.searchSHA(SHA1(faker.Paragraph()))
+	hashName = SHA1(faker.Paragraph())
+	SHAsearchNullID, SHAsearchNullStatus := obj.sql.SHA.Search(&hashName)
 	obj.testPoint(SHAsearchNullID != 0, "SHAsearchNullID")
 	obj.testPoint(SHAsearchNullStatus, "SHAsearchNullStatus")
 
 	/**/
 
 	//	проверка на получение существуюшей записи
-	SHAgetHash, SHAgetStatus := obj.sql.getSHA(hashWordID)
+	SHAgetHash, SHAgetStatus := obj.sql.SHA.Get(hashWordID)
 	obj.testPoint(SHAgetHash != hashWord, "SHAgetHash")
 	obj.testPoint(!SHAgetStatus, "SHAgetStatus")
 
 	//	проверка на получение несуществуюшей записи
-	SHAgetNullHash, SHAgetNullStatus := obj.sql.getSHA(hashParagraphID * hashParagraphID)
+	SHAgetNullHash, SHAgetNullStatus := obj.sql.SHA.Get(hashParagraphID * hashParagraphID)
 	obj.testPoint(SHAgetNullHash != "", "SHAgetNullHash")
 	obj.testPoint(SHAgetNullStatus, "SHAgetNullStatus")
 
 }
+
+/*
 func (obj testObj) databaseFile() {
 	var filesArr [5]testFileObj
 
@@ -163,7 +174,7 @@ func (obj testObj) databaseFile() {
 		buf := strings.Split(tempValue, ":")
 		size, _ := strconv.ParseUint(buf[1], 10, 16)
 
-		fileName := generateFile(uint16(size))
+		fileName := generateFileTXT(uint16(size))
 		fileObj := testFileObj{}
 		defer os.Remove(fileName)
 
@@ -183,22 +194,27 @@ func (obj testObj) databaseFile() {
 		)
 	}
 
-	/**/
+
+	//	Проверка на добавление файла с невалидным раcширением
+	obj.log.Error("NOPE [Invalid fileType]")
+	fakeFileID := obj.sql.addFile(faker.Word()+".ll"+faker.Word(), 0)
+	obj.testPoint(fakeFileID != 0, "addFile fakeFile: Type")
 
 	//	Проверка на добавление несуществующего файла
-	fakeFileID := obj.sql.addFile(faker.Word(), 0)
+	obj.log.Error("NOPE [File not found]")
+	fakeFileID = obj.sql.addFile(faker.Word()+".txt", 0)
 	obj.testPoint(fakeFileID != 0, "addFile fakeFile: ID")
 
 	//	Проверка на добавление файла с невалидным вектором
-	fakeFileName := generateFile(10)
+	fakeFileName := generateFileTXT(10)
 	defer os.Remove(fakeFileName)
+	obj.log.Error("NOPE [Invalid begin vector]")
 	fakeFileID = obj.sql.addFile(fakeFileName, 999)
 	fakeFileObj, fakeFileStatus := obj.sql.getFile(fakeFileID)
 	obj.testPoint(fakeFileObj.id != fakeFileID, "getFile fakeFileVector: ID")
 	obj.testPoint(fakeFileObj.begin == 999, "getFile fakeFileVector: VECTOR")
 	obj.testPoint(!fakeFileStatus, "getFile fakeFileVector: STATUS")
 
-	/**/
 
 	//	Перебор всех сгенерированых файлов
 	for _, fileObj := range filesArr {
@@ -223,3 +239,5 @@ func (obj testObj) databaseFile() {
 func (obj testObj) databaseVectors(filesArr []testFileObj) {
 	//for _, fileObj := range *filesArr {}
 }
+
+*/

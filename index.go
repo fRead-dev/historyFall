@@ -24,21 +24,22 @@ func tempTest(log *zap.Logger) {
 	hfObj := module.Init(log, dir)
 	defer hfObj.Close()
 
+	text1, text2, generateFile := "text_1.txt", "text_2.txt", "text.newFile.txt"
+
 	//получение веткора изменений между файлами
-	comparison, _ := hfObj.Comparison(dir+"text_1.txt", dir+"text_2.txt")
-	log.Info("Полученые расхлжения", zap.String("comparison", comparison))
+	comparison, _ := module.Comparison(dir+text1, dir+text2)
+	log.Info("Полученые расхлжения", zap.Any("comparison", len(comparison)))
 
-	_ = hfObj.GenerateOldVersion(comparison, dir+"text_2.txt", dir+"text.oldFile")
+	//Генерация файла по вектру
+	_ = module.GenerateFileFromVector(&comparison, dir+text1, dir+generateFile)
 
-	oldFile := module.SHA256file(dir + "text_1.txt")
-	newFile := module.SHA256file(dir + "text_2.txt")
-	generateFile := module.SHA256file(dir + "text.oldFile")
-	log.Info("HASH256",
-		zap.Bool(" OLD to Generate", oldFile == generateFile),
-		zap.Bool("NEW to Generate", newFile == generateFile),
-		zap.String("OLD", oldFile),
-		zap.String("NEW", newFile),
-		zap.String("Generate", generateFile),
+	oldFile := module.SHA256file(dir + text1)
+	newFile := module.SHA256file(dir + text2)
+	generateNewFile := module.SHA256file(dir + generateFile)
+
+	log.Info("generateNewFile",
+		zap.Bool("Generate to NEW", generateNewFile == newFile),
+		zap.Bool("Generate to OLD", generateNewFile == oldFile),
 	)
 
 }
