@@ -11,6 +11,12 @@ import (
 
 // Получение дельты изменения, сравнивая два текста
 func generateStoryVector(oldText *[]byte, newText *[]byte) []byte {
+	if oldText == nil {
+		oldText = &NULL_B
+	}
+	if newText == nil {
+		newText = &NULL_B
+	}
 
 	//	Формирование вектора
 	var vector string

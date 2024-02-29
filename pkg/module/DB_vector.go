@@ -94,6 +94,16 @@ func (obj *_historyFall_dbVector) GetResize(id uint32) int64 {
 
 /* Добавление нового вектора (Если есть совпадение то вернет указатель на него) */
 func (obj *_historyFall_dbVector) Add(data *[]byte, hashOld *string, hashNew *string, resize *int64) uint32 {
+	if data == nil {
+		return 0
+	}
+
+	if hashOld == nil {
+		hashOld = &NULL_S
+	}
+	if hashNew == nil {
+		hashNew = &NULL_S
+	}
 
 	//	Подгрузка хешей
 	oldHash := obj.globalObj.SHA.Set(*hashOld)
@@ -132,6 +142,9 @@ func (obj *_historyFall_dbVector) Search(hash *string, limit uint16) ([]uint32, 
 	var oldArr []uint32
 	var newArr []uint32
 
+	if hash == nil {
+		return oldArr, newArr
+	}
 	if limit < 1 {
 		return oldArr, newArr
 	}
