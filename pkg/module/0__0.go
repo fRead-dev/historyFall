@@ -34,7 +34,16 @@ func __TEST__readLVL() zapcore.LevelEnabler {
 
 	for _, arg := range os.Args[1:] {
 		ss := strings.Split(arg, "=")
-		if ss[0] == "" {
+		//fmt.Println(ss)
+
+		//Перехватчик локальных тестов IDE
+		if ss[0] == "-test.benchmem" {
+			lvl = "debug"
+			break
+		}
+
+		//Перехватчик ручного запуска тестов
+		if ss[0] == "logLVL" {
 			lvl = ss[1]
 			break
 		}
