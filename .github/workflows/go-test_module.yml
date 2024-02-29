@@ -24,16 +24,41 @@ jobs:
     steps:
     - name: Action init
       uses: actions/checkout@v4
-    
-    - name: Cache init
+
+
+    - name: Cache [ubuntu] init
+      if: ${{ matrix.os == 'ubuntu-latest' }}
       uses: actions/cache@v3
       with:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-local
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
+
+    - name: Cache [macos] init
+      if: ${{ matrix.os == 'macos-latest' }}
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/Library/Caches/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Cache [windows] init
+      if: ${{ matrix.os == 'windows-latest' }}
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~\AppData\Local\go-build
+          ~\go\pkg\mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
 
     - name: Goland init
       uses: actions/setup-go@v5
