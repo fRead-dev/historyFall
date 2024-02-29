@@ -31,21 +31,9 @@ jobs:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-local
         restore-keys: |
           ${{ runner.os }}-go-
-          
-    - name: go.sum init
-      if: ${{ matrix.os == 'ubuntu-latest' }}
-      run: |
-        if [ ! -f "go.sum" ]; then
-          echo "File 'go.sum' does not exist. Creating..."
-          echo "" > go.sum
-        fi
-        if [ ! -f "./pkg/module/go.sum" ]; then
-          echo "File './pkg/module/go.sum' does not exist. Creating..."
-          echo "" > ./pkg/module/go.sum
-        fi
 
     - name: Goland init
       uses: actions/setup-go@v5
