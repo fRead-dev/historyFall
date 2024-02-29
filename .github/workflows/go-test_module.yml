@@ -1,4 +1,4 @@
-name: Go Test module
+name: Go Global Test
 
 on:
   push:
