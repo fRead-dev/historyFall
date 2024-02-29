@@ -36,7 +36,7 @@ jobs:
           ${{ runner.os }}-go-
           
     - name: go.sum init
-    - if: ${{ matrix.os == 'ubuntu-latest' }}
+      if: ${{ matrix.os == 'ubuntu-latest' }}
       run: |
         if [ ! -f "go.sum" ]; then
           echo "File 'go.sum' does not exist. Creating..."
