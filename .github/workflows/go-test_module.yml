@@ -29,7 +29,7 @@ jobs:
      # Инициализация кеша для линукса
     - name: Cache [ubuntu] init
       if: ${{ matrix.os == 'ubuntu-latest' }}
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cache/go-build
@@ -41,7 +41,7 @@ jobs:
       # Инициализация кеша для мака
     - name: Cache [macos] init
       if: ${{ matrix.os == 'macos-latest' }}
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/Library/Caches/go-build
@@ -53,7 +53,7 @@ jobs:
       # Инициализация кеша для винды
     - name: Cache [windows] init
       if: ${{ matrix.os == 'windows-latest' }}
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~\AppData\Local\go-build
