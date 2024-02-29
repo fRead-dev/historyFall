@@ -30,10 +30,11 @@ func __TEST__Init(t *testing.T, enab zapcore.LevelEnabler) __TEST__globalObj {
 	return obj
 }
 func __TEST__readLVL() zapcore.LevelEnabler {
-	if len(os.Args) < 2 {
-		return zap.DebugLevel
-	}
-	switch strings.ToLower(os.Args[1]) {
+	args := os.Args[1:]
+
+	switch strings.ToLower(args[0]) {
+	case "panic":
+		return zap.DPanicLevel
 	case "error":
 		return zap.ErrorLevel
 	case "warn":
@@ -44,7 +45,7 @@ func __TEST__readLVL() zapcore.LevelEnabler {
 		return zap.DebugLevel
 	}
 
-	return zap.InfoLevel
+	return zap.DebugLevel
 }
 
 func (obj *__TEST__globalObj) generateText(paragraphs uint16) string {
