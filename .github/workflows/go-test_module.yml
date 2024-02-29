@@ -14,8 +14,8 @@ on:
 jobs:
 
 #**********************************************************************************************************************#
-  name: Test
   test-module:
+    name: Test
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
