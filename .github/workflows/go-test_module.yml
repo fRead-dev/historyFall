@@ -1,4 +1,4 @@
-name: Global Test
+name: Global
 
 on:
   push:
@@ -14,6 +14,7 @@ on:
 jobs:
 
 #**********************************************************************************************************************#
+  name: Test
   test-module:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -97,11 +98,22 @@ jobs:
     - name: Start Test
       run: go test -v ./pkg/module -args 'logLVL=panic'
 
-#**********************************************************************************************************************#
+  #**********************************************************************************************************************#
   fail-test-module:
+    name: Failure
     runs-on: ubuntu-latest
     needs: test-module
     if: failure()
     steps:
-      - name: Notify Failure
-        run: echo "First job failed"
+      - name: Notify
+        run: echo "Fail"
+
+  #**********************************************************************************************************************#
+  success-test-module:
+    name: Success
+    runs-on: ubuntu-latest
+    needs: test-module
+    if: success()
+    steps:
+      - name: Notify
+        run: echo "Code is OK"
