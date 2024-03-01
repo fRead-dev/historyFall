@@ -4,6 +4,7 @@ import (
 	"go.uber.org/zap"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
@@ -85,19 +86,45 @@ func (obj *globalModulLoggerObj) Fatal(msg string, fields ...zap.Field) {
 	obj.log.Fatal("\033[31m\033[1m\033[4m"+msg+"\033[0m", fields...)
 }
 
+func (obj *globalModulLoggerObj) callerFile(skip int) string {
+	_, file, line, callerFunc := runtime.Caller(skip)
+
+	if callerFunc {
+		name := strings.Split(file, "/")
+		return name[len(name)-1] + ":" + strconv.Itoa(line)
+	}
+
+	return ""
+}
 func (obj *globalModulLoggerObj) callerName(skip int) string {
 	pc, _, _, _ := runtime.Caller(skip)
 	callerFunc := runtime.FuncForPC(pc)
-	if callerFunc != nil {
-		// Получаем имя вызывающей функции
-		name := strings.Split(callerFunc.Name(), "/")
 
+	if callerFunc != nil {
+		name := strings.Split(callerFunc.Name(), "/")
 		return name[len(name)-1]
 	}
+
 	return ""
 }
 func (obj *globalModulLoggerObj) callerFunc() zap.Field {
 	return zap.String("func", obj.callerName(2))
+}
+func (obj *globalModulLoggerObj) callerTrace(length int) zap.Field {
+	var arr []string
+
+	for i := 2; i <= length+1; i++ {
+		str := obj.callerFile(i)
+
+		if len(str) == 0 { //Отсекаем если стек закончился
+			length = i
+			break
+		}
+
+		arr = append(arr, str)
+	}
+
+	return zap.Any("trace:"+strconv.Itoa(length), arr)
 }
 
 ///	#############################################################################################	///
@@ -105,20 +132,27 @@ func (obj *globalModulLoggerObj) callerFunc() zap.Field {
 type localModulLoggerObj struct {
 	log *globalModulLoggerObj
 
-	rec bool
+	fileInit string
+	rec      bool
 }
 
 func localModulLoggerInit(log *globalModulLoggerObj) localModulLoggerObj {
-	return localModulLoggerObj{log, false}
+	return localModulLoggerObj{
+		log,
+		log.callerFile(2),
+		false,
+	}
 }
 
 func (obj *localModulLoggerObj) callerFunc() zap.Field {
+	skip := 3
+
 	if obj.rec {
 		obj.rec = false
-		return zap.String("func", obj.log.callerName(4))
-	} else {
-		return zap.String("func", obj.log.callerName(3))
+		skip++
 	}
+
+	return zap.String(obj.log.callerFile(skip), obj.log.callerName(skip))
 }
 
 func (obj *localModulLoggerObj) error(text string, err error, fields ...zap.Field) {
@@ -154,15 +188,19 @@ func (obj *localModulLoggerObj) panic(text string, fields ...zap.Field) {
 	obj.log.Panic(text, fields...)
 }
 
+func (obj *localModulLoggerObj) error_null(key string) {
+	obj.rec = true
+	obj.error("Value is NULL", nil, zap.String("name", key))
+}
 func (obj *localModulLoggerObj) error_zero(key string) {
 	obj.rec = true
-	obj.error("Value outside of the range", nil, zap.Int(key, 0))
+	obj.error("Value is ZERO", nil, zap.String("name", key))
 }
 func (obj *localModulLoggerObj) error_short(key string, minLength uint64) {
 	obj.rec = true
-	obj.error("Value is too short", nil, zap.Int(key, 0), zap.Uint64("minLength", minLength))
+	obj.error("Value is too short", nil, zap.String("name", key), zap.Uint64("minLength", minLength))
 }
 func (obj *localModulLoggerObj) error_long(key string, maxLength uint64) {
 	obj.rec = true
-	obj.error("Value is too long", nil, zap.Int(key, 0), zap.Uint64("maxLength", maxLength))
+	obj.error("Value is too long", nil, zap.String("name", key), zap.Uint64("maxLength", maxLength))
 }

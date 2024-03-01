@@ -112,16 +112,17 @@ func (obj *_historyFall_dbFileObj) add(fileName *string, isDel bool, beginVector
 	tx := obj.globalObj.beginTransaction("File:add")
 	currentTime := time.Now().UTC().UnixMicro()
 
-	tx.Exec(
+	result := tx.Exec(
 		"INSERT INTO `database_hf_pkg` (`key`, `isDel`, `time`, `begin`) VALUES (?, ?, ?, ?);",
 		*fileName,
 		isDel,
 		currentTime,
 		beginVectorID,
 	)
+	lastInsertID, _ := result.LastInsertId()
 	tx.End()
 
-	return 0
+	return uint32(lastInsertID)
 }
 
 // /	#############################################################################################	///
@@ -218,6 +219,7 @@ func (obj *_historyFall_dbFileObj) Add(fileName *string, beginVectorID uint32) u
 	//	Отсечение если такого вектора нет
 	_, status := obj.globalObj.Vector.getInfo(beginVectorID)
 	if !status {
+		obj.log.debug("Vector not Found", zap.Uint32("beginVectorID", beginVectorID))
 		return 0
 	}
 

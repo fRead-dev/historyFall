@@ -39,6 +39,8 @@ func (obj *_historyFall_dbShaObj) ClearCache() {
 
 		obj.cache = make(map[uint64]string)
 		obj.cacheKeys = make([]uint64, 0, obj.cacheLimit)
+	} else {
+		obj.log.error("BUF not Init", nil)
 	}
 }
 
@@ -56,6 +58,7 @@ func (obj *_historyFall_dbShaObj) SetCacheLimit(limit uint16) {
 // addCache добаваление хеша в кеш
 func (obj *_historyFall_dbShaObj) addCache(id uint64, hash string) {
 	if obj.cache == nil {
+		obj.log.error("BUF not Init", nil)
 		return
 	}
 
@@ -98,6 +101,7 @@ func (obj *_historyFall_dbShaObj) searchCache(hash *string) (uint64, bool) {
 /* Получение хеша по ID с кешированием */
 func (obj *_historyFall_dbShaObj) Get(id uint64) (string, bool) {
 	if id == 0 {
+		obj.log.error_zero("id")
 		return "NULL", false
 	}
 

@@ -26,6 +26,11 @@ func historyFall_dbTimelineObjInit(globalObj *localSQLiteObj) historyFall_dbTime
 func (obj *historyFall_dbTimelineObj) getComment(id uint32) []byte {
 	var value []byte
 
+	if id == 0 {
+		obj.log.error_zero("id")
+		return value
+	}
+
 	err := obj.globalObj.db.QueryRow("SELECT `data` FROM `database_hf_timelineComments` WHERE `id`=?", id).Scan(&value)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
@@ -61,6 +66,11 @@ func (obj *historyFall_dbTimelineObj) getLastVer(fileID uint32) (uint16, uint32)
 	var id uint32
 	status := true
 
+	if fileID == 0 {
+		obj.log.error_zero("fileID")
+		return 0, 0
+	}
+
 	//	Поиск по базе
 	err := obj.globalObj.db.QueryRow("SELECT `ver`, `id` FROM `database_hf_timeline` WHERE `file` = ? ORDER BY `ver` ASC LIMIT 1", fileID).Scan(&ver, &id)
 	if err != nil {
@@ -81,6 +91,11 @@ func (obj *historyFall_dbTimelineObj) getLastVer(fileID uint32) (uint16, uint32)
 func (obj *historyFall_dbTimelineObj) getUINT(id uint32, column string) uint64 {
 	var value uint64
 
+	if id == 0 {
+		obj.log.error_zero("id")
+		return 0
+	}
+
 	err := obj.globalObj.db.QueryRow("SELECT ? FROM `database_hf_timeline` WHERE `id`=? LIMIT 1;", column, id).Scan(&value)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
@@ -99,6 +114,11 @@ func (obj *historyFall_dbTimelineObj) getUINT(id uint32, column string) uint64 {
 func (obj *historyFall_dbTimelineObj) Get(id uint32) (database_hf_timeline, bool) {
 	retObj := database_hf_timeline{}
 	status := true
+
+	if id == 0 {
+		obj.log.error_zero("id")
+		return retObj, false
+	}
 
 	//	Поиск по базе
 	err := obj.globalObj.db.QueryRow("SELECT `id`, `ver`, `time`, `file`, `vector` FROM `database_hf_timeline` WHERE `id` = ?", id).Scan(
@@ -140,30 +160,43 @@ func (obj *historyFall_dbTimelineObj) Get(id uint32) (database_hf_timeline, bool
 }
 
 func (obj *historyFall_dbTimelineObj) GetVer(id uint32) uint16 {
-	value := obj.getUINT(id, "ver")
-
-	if value > 0 {
-		return uint16(value)
-	} else {
+	if id == 0 {
+		obj.log.error_zero("id")
 		return 1
 	}
+
+	return uint16(obj.getUINT(id, "ver"))
 }
 func (obj *historyFall_dbTimelineObj) GetFile(id uint32) uint32 {
+	if id == 0 {
+		obj.log.error_zero("id")
+		return 0
+	}
 	return uint32(obj.getUINT(id, "file"))
 }
 func (obj *historyFall_dbTimelineObj) GetTime(id uint32) uint64 {
+	if id == 0 {
+		obj.log.error_zero("id")
+		return 0
+	}
 	return obj.getUINT(id, "time")
 }
 func (obj *historyFall_dbTimelineObj) GetVector(id uint32) uint32 {
+	if id == 0 {
+		obj.log.error_zero("id")
+		return 0
+	}
 	return uint32(obj.getUINT(id, "vector"))
 }
 
 /* Добавление новой точки (Если дубль то вернет указатель на него)  */
 func (obj *historyFall_dbTimelineObj) Add(fileID uint32, vectorID uint32) uint32 {
 	if fileID == 0 {
+		obj.log.error_zero("fileID")
 		return 0
 	}
 	if vectorID == 0 {
+		obj.log.error_zero("vectorID")
 		return 0
 	}
 
@@ -188,20 +221,30 @@ func (obj *historyFall_dbTimelineObj) Add(fileID uint32, vectorID uint32) uint32
 	currentTime := time.Now().UTC().UnixMicro()
 	tx := obj.globalObj.beginTransaction("Timeline:Add")
 
-	tx.Exec(
+	result := tx.Exec(
 		"INSERT INTO `database_hf_timeline` (`ver`, `time`, `file`, `vector`) VALUES (?, ?, ?, ?);",
 		version,
 		currentTime,
 		fileID,
 		vectorID,
 	)
+	lastInsertID, _ := result.LastInsertId()
 	tx.End()
 
-	return 0
+	return uint32(lastInsertID)
 }
 
 /* Добавление новой точки С коментарием к ней */
 func (obj *historyFall_dbTimelineObj) AddComment(fileID uint32, vectorID uint32, comment *[]byte) uint32 {
+	if fileID == 0 {
+		obj.log.error_zero("fileID")
+		return 0
+	}
+	if vectorID == 0 {
+		obj.log.error_zero("vectorID")
+		return 0
+	}
+
 	id := obj.Add(fileID, vectorID)
 
 	//	Сжатие
@@ -224,8 +267,10 @@ func (obj *historyFall_dbTimelineObj) AddComment(fileID uint32, vectorID uint32,
 /*	Получение вектора таймлайна по файлу	*/
 func (obj *historyFall_dbTimelineObj) SearchFile(fileID uint32, minVersion uint16, maxVersion uint16) []uint32 {
 	if fileID == 0 {
+		obj.log.error_zero("fileID")
 		return []uint32{}
 	}
+
 	if maxVersion <= minVersion {
 		maxVersion = 9999
 	}
@@ -242,6 +287,7 @@ func (obj *historyFall_dbTimelineObj) SearchFile(fileID uint32, minVersion uint1
 /* Получение вектора за временной промежуток */
 func (obj *historyFall_dbTimelineObj) SearchTime(fileID uint32, begin time.Time, end time.Time) []uint32 {
 	if fileID == 0 {
+		obj.log.error_zero("fileID")
 		return []uint32{}
 	}
 
@@ -266,6 +312,7 @@ func (obj *historyFall_dbTimelineObj) SearchTime(fileID uint32, begin time.Time,
 /* Получение списка точек которые соотвествуют вектору */
 func (obj *historyFall_dbTimelineObj) SearchVector(vectorID uint32) []uint32 {
 	if vectorID == 0 {
+		obj.log.error_zero("vectorID")
 		return []uint32{}
 	}
 

@@ -26,6 +26,11 @@ func (obj *historyFall_dbVectorObj) getInfo(id uint32) (database_hf_vectorInfo, 
 	retObj := database_hf_vectorInfo{}
 	status := true
 
+	if id == 0 {
+		obj.log.error_zero("id")
+		return retObj, false
+	}
+
 	//	Поиск по базе
 	err := obj.globalObj.db.QueryRow("SELECT `id`, `resize`, `old`, `new` FROM `database_hf_vectorInfo` WHERE `id` = ?", id).Scan(
 		&retObj.ID,
@@ -45,6 +50,15 @@ func (obj *historyFall_dbVectorObj) getInfo(id uint32) (database_hf_vectorInfo, 
 
 // searchID Поиск совпадаюшего вектора
 func (obj *historyFall_dbVectorObj) searchID(oldID uint64, newID uint64) (uint32, bool) {
+	if oldID == 0 {
+		obj.log.error_zero("oldID")
+		return 0, false
+	}
+	if newID == 0 {
+		obj.log.error_zero("newID")
+		return 0, false
+	}
+
 	retID := uint32(0)
 	status := true
 
@@ -66,6 +80,11 @@ func (obj *historyFall_dbVectorObj) searchID(oldID uint64, newID uint64) (uint32
 func (obj *historyFall_dbVectorObj) Get(id uint32) (database_hf_vectorsData, bool) {
 	retObj := database_hf_vectorsData{}
 	status := true
+
+	if id == 0 {
+		obj.log.error_zero("id")
+		return retObj, false
+	}
 
 	//	Поиск по ID
 	retObj.Info, status = obj.getInfo(id)
@@ -95,8 +114,12 @@ func (obj *historyFall_dbVectorObj) Get(id uint32) (database_hf_vectorsData, boo
 
 /* Получить Resize по ID */
 func (obj *historyFall_dbVectorObj) GetResize(id uint32) int64 {
-	retObj, status := obj.getInfo(id)
+	if id == 0 {
+		obj.log.error_zero("id")
+		return 0
+	}
 
+	retObj, status := obj.getInfo(id)
 	if !status {
 		return 0
 	}
@@ -107,6 +130,7 @@ func (obj *historyFall_dbVectorObj) GetResize(id uint32) int64 {
 /* Добавление нового вектора (Если есть совпадение то вернет указатель на него) */
 func (obj *historyFall_dbVectorObj) Add(data *[]byte, hashOld *string, hashNew *string, resize *int64) uint32 {
 	if data == nil {
+		obj.log.error_null("data")
 		return 0
 	}
 
