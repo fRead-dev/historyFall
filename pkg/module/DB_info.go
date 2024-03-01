@@ -26,7 +26,7 @@ func (obj localSQLiteObj) getInfo(name string) (string, bool) {
 
 	err := obj.db.QueryRow("SELECT `data` FROM `database_hf_info` WHERE `name`=?", name).Scan(&value)
 	if err != nil {
-		obj.log.Error("DB", zap.String("func", "getInfo"), zap.Error(err))
+		obj.log.Error("QueryRow", obj.log.callerFunc(), zap.Error(err), zap.Any("name", name))
 		return "", false
 	}
 
@@ -102,6 +102,7 @@ func (obj localSQLiteObj) getCreate() uint64 {
 		num, _ := strconv.ParseUint(value, 10, 64)
 		return num
 	} else {
+		obj.log.Error("getInfo:create", obj.log.callerFunc())
 		return 0
 	}
 }
@@ -114,6 +115,7 @@ func (obj localSQLiteObj) getUpdate() uint64 {
 		num, _ := strconv.ParseUint(value, 10, 64)
 		return num
 	} else {
+		obj.log.Error("getInfo:upd", obj.log.callerFunc())
 		return 0
 	}
 }

@@ -47,7 +47,6 @@ func (obj *globalModulLoggerObj) Fatal(msg string, fields ...zap.Field) {
 	obj.log.Fatal("\033[31m\033[1m\033[4m"+msg+"\033[0m", fields...)
 }
 
-// callerName Получаем информацию о вызывающей функции из стека вызовов
 func (obj *globalModulLoggerObj) callerName(skip int) string {
 	pc, _, _, _ := runtime.Caller(skip)
 	callerFunc := runtime.FuncForPC(pc)
@@ -59,6 +58,9 @@ func (obj *globalModulLoggerObj) callerName(skip int) string {
 	}
 	return ""
 }
+func (obj *globalModulLoggerObj) callerFunc() zap.Field {
+	return zap.String("func", obj.callerName(2))
+}
 
 ///	#############################################################################################	///
 
@@ -67,18 +69,18 @@ type localModulLoggerObj struct {
 }
 
 func (obj *localModulLoggerObj) error(text string, err error, fields ...zap.Field) {
-	fields = append(fields, zap.String("func", obj.log.callerName(2)), zap.Error(err))
+	fields = append(fields, obj.log.callerFunc(), zap.Error(err))
 	obj.log.Error(text, fields...)
 }
 func (obj *localModulLoggerObj) info(text string, fields ...zap.Field) {
-	fields = append(fields, zap.String("func", obj.log.callerName(2)))
+	fields = append(fields, obj.log.callerFunc())
 	obj.log.Info(text, fields...)
 }
 func (obj *localModulLoggerObj) debug(text string, fields ...zap.Field) {
-	fields = append(fields, zap.String("func", obj.log.callerName(2)))
+	fields = append(fields, obj.log.callerFunc())
 	obj.log.Debug(text, fields...)
 }
 func (obj *localModulLoggerObj) panic(text string, fields ...zap.Field) {
-	fields = append(fields, zap.String("func", obj.log.callerName(2)))
+	fields = append(fields, obj.log.callerFunc())
 	obj.log.Panic(text, fields...)
 }
