@@ -179,6 +179,7 @@ func (obj *_historyFall_dbFileObj) Search(fileName *string) (uint32, bool) {
 	//	поиск по кешу
 	retID, status := obj.searchKey(fileName)
 	if status {
+		obj.log.debug("Load from BUF", zap.String("fileName", *fileName))
 		return retID, status
 	}
 
@@ -232,8 +233,10 @@ func (obj *_historyFall_dbFileObj) Add(fileName *string, beginVectorID uint32) u
 			name := (*fileName) + ".old"
 			obj.add(&name, true, pcg.Begin.ID)      //	Создание новой записи для сохранения истории дубля
 			obj.updVector(id, false, beginVectorID) //	Изменение текущей записи
-		}
 
+			obj.log.debug("Buffering old File", zap.Uint32("beginVectorID", beginVectorID))
+		}
+		obj.log.debug("File is already in DB", zap.Uint32("beginVectorID", beginVectorID))
 		return id
 	}
 

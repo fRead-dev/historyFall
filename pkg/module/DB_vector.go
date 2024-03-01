@@ -121,6 +121,7 @@ func (obj *historyFall_dbVectorObj) GetResize(id uint32) int64 {
 
 	retObj, status := obj.getInfo(id)
 	if !status {
+		obj.log.debug("Vector not found", zap.Any("id", id))
 		return 0
 	}
 
@@ -148,6 +149,7 @@ func (obj *historyFall_dbVectorObj) Add(data *[]byte, hashOld *string, hashNew *
 	//	Поиск совпадения по вектору
 	id, status := obj.searchID(oldHash.ID, newHash.ID)
 	if status {
+		obj.log.debug("Vector load from BUF", zap.Any("oldHash", oldHash.ID), zap.Any("newHash", newHash.ID))
 		return id
 	}
 
@@ -179,9 +181,11 @@ func (obj *historyFall_dbVectorObj) Search(hash *string, limit uint16) ([]uint32
 	var newArr []uint32
 
 	if hash == nil {
+		obj.log.error_null("hash")
 		return oldArr, newArr
 	}
-	if limit < 1 {
+	if limit == 0 {
+		obj.log.error_null("limit")
 		return oldArr, newArr
 	}
 

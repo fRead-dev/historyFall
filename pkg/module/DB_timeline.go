@@ -203,6 +203,7 @@ func (obj *historyFall_dbTimelineObj) Add(fileID uint32, vectorID uint32) uint32
 	//Получение посленей актуальной версии и отсечение если файл не был инициализирован
 	version, idLastVer := obj.getLastVer(fileID)
 	if idLastVer == 0 {
+		obj.log.debug("File not found", zap.Any("fileID", fileID))
 		return 0
 	}
 
@@ -214,6 +215,7 @@ func (obj *historyFall_dbTimelineObj) Add(fileID uint32, vectorID uint32) uint32
 	//Проверка на существование вектора
 	_, status := obj.globalObj.Vector.getInfo(vectorID)
 	if !status {
+		obj.log.debug("Vector not found", zap.Any("fileID", fileID), zap.Any("vectorID", vectorID))
 		return 0
 	}
 
@@ -272,6 +274,7 @@ func (obj *historyFall_dbTimelineObj) SearchFile(fileID uint32, minVersion uint1
 	}
 
 	if maxVersion <= minVersion {
+		obj.log.debug("MAX limit removed")
 		maxVersion = 9999
 	}
 
@@ -297,6 +300,7 @@ func (obj *historyFall_dbTimelineObj) SearchTime(fileID uint32, begin time.Time,
 
 	//	Если верхний предел ниже нижнего то убираем его
 	if beginTimestamp <= endTimestamp {
+		obj.log.debug("MAX limit removed")
 		endTimestamp = 9999999999999999999
 	}
 

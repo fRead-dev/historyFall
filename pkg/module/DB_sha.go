@@ -113,6 +113,7 @@ func (obj *_historyFall_dbShaObj) Get(id uint64) (string, bool) {
 		value, status = obj.getCache(id)
 	}
 	if status {
+		obj.log.debug("SHA load from BUF", zap.Any("id", id))
 		return value, status
 	} else {
 		status = true
@@ -147,6 +148,7 @@ func (obj *_historyFall_dbShaObj) Search(hash *string) (uint64, bool) {
 	//	Быстрый поиск по кешу ( может быть неоптимальною при большом выделении кеша)
 	id, status = obj.searchCache(hash)
 	if status {
+		obj.log.debug("SHA load from BUF", zap.Any("hash", *hash))
 		return id, status
 	}
 
@@ -176,6 +178,7 @@ func (obj *_historyFall_dbShaObj) Add(hash string) uint64 {
 
 	//	Возврат если такой ключ есть
 	if status {
+		obj.log.debug("SHA load from BUF", zap.Any("hash", hash))
 		return id
 	}
 
