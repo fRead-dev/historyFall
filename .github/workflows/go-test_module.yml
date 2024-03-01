@@ -35,9 +35,9 @@ jobs:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
+          pkg/module/go.sum
+          go.sum
         key: ${{ runner.os }}-go-local
-        restore-keys: |
-          ${{ runner.os }}-go-
 
     - name: Cache [macos] init
       if: ${{ matrix.os == 'macos-latest' }}
@@ -46,9 +46,10 @@ jobs:
         path: |
           ~/Library/Caches/go-build
           ~/go/pkg/mod
+          pkg/module/go.sum
+          go.sum
         key: ${{ runner.os }}-go-local
-        restore-keys: |
-          ${{ runner.os }}-go-
+        enableCrossOsArchive: true
 
     - name: Cache [windows] init
       if: ${{ matrix.os == 'windows-latest' }}
@@ -57,9 +58,10 @@ jobs:
         path: |
           ~\AppData\Local\go-build
           ~\go\pkg\mod
+          pkg/module/go.sum
+          go.sum
         key: ${{ runner.os }}-go-local
-        restore-keys: |
-          ${{ runner.os }}-go-
+        enableCrossOsArchive: true
 
 ########################################################################################################################
 
@@ -92,6 +94,11 @@ jobs:
           go mod tidy
         }
       working-directory: ${{ github.workspace }}
+
+########################################################################################################################
+
+    - name: Save Cache
+      uses: actions/cache@v4
 
 ########################################################################################################################
 
