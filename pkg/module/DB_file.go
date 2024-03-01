@@ -16,10 +16,14 @@ type _historyFall_dbFileObj struct {
 
 func _historyFall_dbFileObjInit(globalObj *localSQLiteObj) _historyFall_dbFileObj {
 	log := localModulLoggerInit(globalObj.log)
-	return _historyFall_dbFileObj{
-		globalObj: globalObj,
-		log:       &log,
-	}
+	obj := _historyFall_dbFileObj{}
+
+	obj.log = &log
+	obj.globalObj = globalObj
+
+	obj.buf = make(map[string]uint32)
+
+	return obj
 }
 
 // /	#############################################################################################	///

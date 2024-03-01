@@ -17,10 +17,16 @@ type _historyFall_dbShaObj struct {
 
 func _historyFall_dbShaObjInit(globalObj *localSQLiteObj) _historyFall_dbShaObj {
 	log := localModulLoggerInit(globalObj.log)
-	return _historyFall_dbShaObj{
-		globalObj: globalObj,
-		log:       &log,
-	}
+	obj := _historyFall_dbShaObj{}
+
+	obj.log = &log
+	obj.globalObj = globalObj
+
+	obj.cacheLimit = 100
+	obj.cache = make(map[uint64]string)
+	obj.cacheKeys = make([]uint64, 0, obj.cacheLimit)
+
+	return obj
 }
 
 // /	#############################################################################################	///

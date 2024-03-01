@@ -87,8 +87,6 @@ func initDB(logger *zap.Logger, dir string, name string, autoFix bool) localSQLi
 	obj.Create = func() uint64 { return obj.getCreate() }
 	obj.Update = func() uint64 { return obj.getUpdate() }
 
-	obj.SHA.SetCacheLimit(100)
-
 	//	Проверка целостности структуры базы данных
 	if !obj.DatabaseValidation() {
 		if autoFix {

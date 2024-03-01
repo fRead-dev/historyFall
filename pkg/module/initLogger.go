@@ -115,9 +115,9 @@ func localModulLoggerInit(log *globalModulLoggerObj) localModulLoggerObj {
 func (obj *localModulLoggerObj) callerFunc() zap.Field {
 	if obj.rec {
 		obj.rec = false
-		return zap.String("func", obj.log.callerName(3))
+		return zap.String("func", obj.log.callerName(4))
 	} else {
-		return zap.String("func", obj.log.callerName(2))
+		return zap.String("func", obj.log.callerName(3))
 	}
 }
 
