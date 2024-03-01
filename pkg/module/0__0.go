@@ -120,11 +120,18 @@ func (obj *__TEST__globalObj) fail(isNotFail bool, args ...string) {
 	}
 
 	if !isNotFail {
-		obj.log.DPanic("INVALID", zap.Any(name, bufVals))
+		obj.log.DPanic(obj.redText("INVALID"), zap.Any(name, bufVals))
 		obj.t.Fail()
 	} else {
-		obj.log.Debug(" VALID ", zap.Any(name, bufVals))
+		obj.log.Debug(obj.greenText(" VALID "), zap.Any(name, bufVals))
 	}
+}
+
+func (obj *__TEST__globalObj) redText(text string) string {
+	return "\033[31m" + text + "\033[0m"
+}
+func (obj *__TEST__globalObj) greenText(text string) string {
+	return "\033[32m" + text + "\033[0m"
 }
 
 func (obj *__TEST__globalObj) pI(text string, fields ...zap.Field) {

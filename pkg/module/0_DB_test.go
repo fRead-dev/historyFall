@@ -20,7 +20,7 @@ func Test_initDB(t *testing.T) {
 	test.fail(!db.DatabaseValidation(), "DatabaseValidation", "FALSE")
 	test.fail(!db.Enable(), "Enable", "FALSE")
 
-	//	Инициализация в строгом режиме и повторная валидация но уже на успех
+	//	Инициализация в строгом режиме и повторная валидация, но уже на успех
 	db = initDB(test.log, "__TEST__", "", true)
 	test.fail(db.DatabaseValidation(), "DatabaseValidation", "TRUE")
 
@@ -93,6 +93,10 @@ func Test_readWriteDB(t *testing.T) {
 		oldText := []byte(test.generateText(4))
 		newText := []byte(test.generateText(4))
 		vectorID := obj.AddUpdPKG(&file, &oldText, &newText)
+		fileID, fileStatus := db.File.Search(&file)
+
+		//	Проверка на
+		test.fail(fileStatus, "File.Search", file, strconv.Itoa(int(fileID)))
 
 		//	Проверка на валидное добавление с обновлением
 		test.fail(vectorID == uint32((pos+1)*2), "AddUpdPKG:add", file, strconv.Itoa(int(vectorID))+" = "+strconv.Itoa((pos+1)*2))
