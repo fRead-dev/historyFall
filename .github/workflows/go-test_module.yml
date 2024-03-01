@@ -71,8 +71,7 @@ jobs:
     - name: Goland init
       uses: actions/setup-go@v5
       with:
-        go-version: '1.21'
-        check-latest: true
+        go-version-file: 'go.mod'
 
     - name: go.sum [macos, ubuntu] init
       if: ${{ matrix.os == 'macos-latest' || matrix.os == 'ubuntu-latest' }}
