@@ -7,12 +7,14 @@ import (
 	"time"
 )
 
-// /	#############################################################################################	///
 type _historyFall_dbFile struct {
 	globalObj *localSQLiteObj
+	log       *localModulLoggerObj
 
 	buf map[string]uint32 //	Буфер для словаря активных файлов
 }
+
+// /	#############################################################################################	///
 
 // searchKey	Поиск ключа по буферу
 func (obj *_historyFall_dbFile) searchKey(key *string) (uint32, bool) {

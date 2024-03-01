@@ -6,6 +6,13 @@ import (
 	"go.uber.org/zap"
 )
 
+type _historyFall_dbVector struct {
+	globalObj *localSQLiteObj
+	log       *localModulLoggerObj
+}
+
+// /	#############################################################################################	///
+
 // getInfo Поиск вектора по ID
 func (obj *_historyFall_dbVector) getInfo(id uint32) (database_hf_vectorInfo, bool) {
 	retObj := database_hf_vectorInfo{}
@@ -46,9 +53,6 @@ func (obj *_historyFall_dbVector) searchID(oldID uint64, newID uint64) (uint32, 
 }
 
 // /	#############################################################################################	///
-type _historyFall_dbVector struct {
-	globalObj *localSQLiteObj
-}
 
 /* Получение вектора по ID */
 func (obj *_historyFall_dbVector) Get(id uint32) (database_hf_vectorsData, bool) {

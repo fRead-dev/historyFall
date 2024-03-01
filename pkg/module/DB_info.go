@@ -36,6 +36,7 @@ func (obj localSQLiteObj) getInfo(name string) (string, bool) {
 // /	#############################################################################################	///
 type _historyFall_dbVersion struct {
 	globalObj *localSQLiteObj
+	log       *localModulLoggerObj
 
 	ver string //	Версия используемой структуры
 }
@@ -62,6 +63,7 @@ func (obj _historyFall_dbVersion) Set() {
 // /	#############################################################################################	///
 type _historyFall_dbExtensions struct {
 	globalObj *localSQLiteObj
+	log       *localModulLoggerObj
 
 	list []string //Допустимые расширения файлов
 }

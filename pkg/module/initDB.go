@@ -222,48 +222,6 @@ func databaseGenerateSQLiteFromStruct(s *interface{}) string {
 }
 
 // ################################################################################	//
-type databaseLoggerObj struct {
-	log *zap.Logger
-}
-
-//    Черный: \033[30m
-//    Красный: \033[31m
-//    Зеленый: \033[32m
-//    Желтый: \033[33m
-//    Синий: \033[34m
-//    Фиолетовый: \033[35m
-//    Голубой: \033[36m
-//    Белый: \033[37m
-//
-//    Жирный: \033[1m
-//    Наклонный: \033[3m
-//    Подчеркнутый: \033[4m
-//    Инвертированный: \033[7m
-//    Сброс цвета: \033[0m
-
-func (obj *databaseLoggerObj) Debug(msg string, fields ...zap.Field) {
-	obj.log.Debug("\033[33m"+msg+"\033[0m", fields...)
-}
-func (obj *databaseLoggerObj) Info(msg string, fields ...zap.Field) {
-	obj.log.Info("\033[36m"+msg+"\033[0m", fields...)
-}
-func (obj *databaseLoggerObj) Warn(msg string, fields ...zap.Field) {
-	obj.log.Warn("\033[35m"+msg+"\033[0m", fields...)
-}
-func (obj *databaseLoggerObj) Error(msg string, fields ...zap.Field) {
-	obj.log.Error("\033[31m\033[3m"+msg+"\033[0m", fields...)
-}
-func (obj *databaseLoggerObj) DPanic(msg string, fields ...zap.Field) {
-	obj.log.DPanic("\033[31m"+msg+"\033[0m", fields...)
-}
-func (obj *databaseLoggerObj) Panic(msg string, fields ...zap.Field) {
-	obj.log.Panic("\033[31m\033[1m"+msg+"\033[0m", fields...)
-}
-func (obj *databaseLoggerObj) Fatal(msg string, fields ...zap.Field) {
-	obj.log.Fatal("\033[31m\033[1m\033[4m"+msg+"\033[0m", fields...)
-}
-
-// ################################################################################	//
 
 type databaseTransactionObj struct {
 	name string
@@ -271,11 +229,11 @@ type databaseTransactionObj struct {
 
 	tx  *sql.Tx
 	db  *sql.DB
-	log *databaseLoggerObj
+	log *globalModulLoggerObj
 }
 
 /* Инициализация транзакционного обьекта */
-func databaseTransaction(name string, log *databaseLoggerObj, db *sql.DB) databaseTransactionObj {
+func databaseTransaction(name string, log *globalModulLoggerObj, db *sql.DB) databaseTransactionObj {
 	obj := databaseTransactionObj{}
 	obj.db = db
 	obj.log = log

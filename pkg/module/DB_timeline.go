@@ -7,10 +7,12 @@ import (
 	"time"
 )
 
-// /	#############################################################################################	///
 type _historyFall_dbTimeline struct {
 	globalObj *localSQLiteObj
+	log       *localModulLoggerObj
 }
+
+// /	#############################################################################################	///
 
 // getComment Получение коментария к точке если он есть
 func (obj *_historyFall_dbTimeline) getComment(id uint32) []byte {

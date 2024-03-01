@@ -13,7 +13,7 @@ import (
 // localSQLiteObj	Главный обьект класса работы с базой
 type localSQLiteObj struct {
 	db  *sql.DB
-	log *databaseLoggerObj
+	log *globalModulLoggerObj
 
 	name string //	Название директории за которую отвечает historyFall
 	dir  string //	полный путь к дериктории
@@ -33,7 +33,7 @@ type localSQLiteObj struct {
 
 /*	Инициализация работы с базой	*/
 func initDB(logger *zap.Logger, dir string, name string, autoFix bool) localSQLiteObj {
-	log := databaseLoggerObj{log: logger}
+	log := globalModulLoggerObj{log: logger}
 	log.Info("Init DB..")
 
 	var dbFilePath string = ""
@@ -77,15 +77,15 @@ func initDB(logger *zap.Logger, dir string, name string, autoFix bool) localSQLi
 	obj.name = name
 	obj.dir = dir
 
-	obj.Extensions = _historyFall_dbExtensions{globalObj: &obj}
-	obj.Version = _historyFall_dbVersion{globalObj: &obj}
+	obj.Extensions = _historyFall_dbExtensions{globalObj: &obj, log: &localModulLoggerObj{&log}}
+	obj.Version = _historyFall_dbVersion{globalObj: &obj, log: &localModulLoggerObj{&log}}
+	obj.SHA = _historyFall_dbSHA{globalObj: &obj, log: &localModulLoggerObj{&log}}
+	obj.Vector = _historyFall_dbVector{globalObj: &obj, log: &localModulLoggerObj{&log}}
+	obj.File = _historyFall_dbFile{globalObj: &obj, log: &localModulLoggerObj{&log}}
+	obj.Timeline = _historyFall_dbTimeline{globalObj: &obj, log: &localModulLoggerObj{&log}}
+
 	obj.Create = func() uint64 { return obj.getCreate() }
 	obj.Update = func() uint64 { return obj.getUpdate() }
-
-	obj.SHA = _historyFall_dbSHA{globalObj: &obj}
-	obj.Vector = _historyFall_dbVector{globalObj: &obj}
-	obj.File = _historyFall_dbFile{globalObj: &obj}
-	obj.Timeline = _historyFall_dbTimeline{globalObj: &obj}
 
 	obj.SHA.SetCacheLimit(100)
 
