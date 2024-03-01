@@ -33,6 +33,7 @@ func (obj *_historyFall_dbFile) searchKey(key *string) (uint32, bool) {
 // addKey добавить ключ в буфер
 func (obj *_historyFall_dbFile) addKey(id uint32, key string) {
 	if obj.buf == nil {
+		obj.log.error("BUF not Init", nil)
 		return
 	}
 
@@ -44,6 +45,8 @@ func (obj *_historyFall_dbFile) ClearCache() {
 	if obj.buf != nil {
 		obj.buf = nil
 		obj.buf = make(map[string]uint32)
+	} else {
+		obj.log.error("BUF not Init", nil)
 	}
 }
 
@@ -64,6 +67,8 @@ func (obj *_historyFall_dbFile) AutoloadCache() {
 			}
 		}
 		rows.Close()
+	} else {
+		obj.log.error("BUF not Init", nil)
 	}
 }
 
@@ -114,6 +119,11 @@ func (obj *_historyFall_dbFile) Get(id uint32) (database_hf_pkg, bool) {
 	retObj := database_hf_pkg{}
 	status := true
 
+	if id == 0 {
+		obj.log.error_zero("id")
+		return retObj, false
+	}
+
 	//	Поиск по базе
 	err := obj.globalObj.db.QueryRow("SELECT `id`, `key`, `isDel`, `time`, `begin` FROM `database_hf_pkg` WHERE `id` = ?", id).Scan(
 		&retObj.ID,
@@ -145,6 +155,11 @@ func (obj *_historyFall_dbFile) Get(id uint32) (database_hf_pkg, bool) {
 /* Поиск файла по названию */
 func (obj *_historyFall_dbFile) Search(fileName *string) (uint32, bool) {
 	if len(*fileName) < 2 {
+		obj.log.error_short("fileName", 2)
+		return 0, false
+	}
+	if len(*fileName) > 42 {
+		obj.log.error_long("fileName", 42)
 		return 0, false
 	}
 
@@ -175,7 +190,16 @@ func (obj *_historyFall_dbFile) Search(fileName *string) (uint32, bool) {
 
 /* Добавление нового файла (Если есть совпадение то вернет указатель на него, обновив) */
 func (obj *_historyFall_dbFile) Add(fileName *string, beginVectorID uint32) uint32 {
+	if beginVectorID == 0 {
+		obj.log.error_zero("beginVectorID")
+		return 0
+	}
 	if len(*fileName) < 2 {
+		obj.log.error_short("fileName", 2)
+		return 0
+	}
+	if len(*fileName) > 42 {
+		obj.log.error_long("fileName", 42)
 		return 0
 	}
 
@@ -205,7 +229,8 @@ func (obj *_historyFall_dbFile) Add(fileName *string, beginVectorID uint32) uint
 
 /*	Изменить статус файла	*/
 func (obj *_historyFall_dbFile) UpdIsDel(id uint32, isDel bool) {
-	if id < 1 {
+	if id == 0 {
+		obj.log.error_zero("id")
 		return
 	}
 
