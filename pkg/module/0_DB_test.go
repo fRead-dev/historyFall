@@ -10,7 +10,7 @@ import (
 )
 
 func Test_initDB(t *testing.T) {
-	test := __TEST__Init(t, __TEST__readLVL())
+	test := __TEST__Init(t, __TEST__readLVL(), "initDB")
 	defer test.Close()
 
 	db := initDB(test.log, "__TEST__", "", false)
@@ -29,7 +29,7 @@ func Test_initDB(t *testing.T) {
 }
 
 func Test_readWriteDB(t *testing.T) {
-	test := __TEST__Init(t, __TEST__readLVL())
+	test := __TEST__Init(t, __TEST__readLVL(), "readWriteDB")
 	defer test.Close()
 
 	db := initDB(test.log, "__TEST__", "", true)

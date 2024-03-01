@@ -20,13 +20,15 @@ type __TEST__globalObj struct {
 }
 
 // zap.DebugLevel | zap.InfoLevel | zap.WarnLevel | zap.ErrorLevel
-func __TEST__Init(t *testing.T, enab zapcore.LevelEnabler) __TEST__globalObj {
+func __TEST__Init(t *testing.T, enab zapcore.LevelEnabler, msg string) __TEST__globalObj {
 	obj := __TEST__globalObj{}
 	obj.log = zaptest.NewLogger(
 		t,
 		zaptest.Level(enab),
 	)
 	obj.t = t
+
+	obj.log.Warn("\033[35m" + msg + "\033[0m")
 	return obj
 }
 func __TEST__readLVL() zapcore.LevelEnabler {
