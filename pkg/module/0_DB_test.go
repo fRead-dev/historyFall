@@ -104,7 +104,19 @@ func Test_readWriteDB(t *testing.T) {
 		//	Проверяем существование вектора в базе
 		_, isset1 := db.Vector.getInfo(vectorID - 1)
 		_, isset2 := db.Vector.getInfo(vectorID)
-		test.fail(isset1, "AddUpdPKG:isset", file, strconv.Itoa(int(vectorID-1)), strconv.FormatBool(isset1))
-		test.fail(isset2, "AddUpdPKG:isset", file, strconv.Itoa(int(vectorID)), strconv.FormatBool(isset2))
+		test.fail(isset1, "Vector.getInfo:isset1", file, strconv.Itoa(int(vectorID-1)), strconv.FormatBool(isset1))
+		test.fail(isset2, "Vector.getInfo:isset2", file, strconv.Itoa(int(vectorID)), strconv.FormatBool(isset2))
+
+		//	Загружаем полный обьект файла
+		fileOLD, _ := db.File.Get(fileID - 1)
+		fileNEW, _ := db.File.Get(fileID)
+		test.fail(fileOLD.ID == (fileID-1), "File.Get:fileOLD", strconv.Itoa(int(fileOLD.ID)))
+		test.fail(fileNEW.ID == fileID, "File.Get:fileNEW", strconv.Itoa(int(fileNEW.ID)))
+
+		//	Загружаем полный обьект вектора
+		vectorOLD, _ := db.Vector.Get(vectorID - 1)
+		vectorNEW, _ := db.Vector.Get(vectorID)
+		test.fail(vectorOLD.Info.ID == (vectorID-1), "Vector.Get:vectorOLD", strconv.Itoa(int(vectorOLD.Info.ID)))
+		test.fail(vectorNEW.Info.ID == vectorID, "Vector.Get:vectorNEW", strconv.Itoa(int(vectorNEW.Info.ID)))
 	}
 }
