@@ -13,7 +13,7 @@ import (
 // localSQLiteObj	Главный обьект класса работы с базой
 type localSQLiteObj struct {
 	db  *sql.DB
-	log *zap.Logger
+	log *databaseLoggerObj
 
 	name string //	Название директории за которую отвечает historyFall
 	dir  string //	полный путь к дериктории
@@ -32,7 +32,8 @@ type localSQLiteObj struct {
 ///	#############################################################################################	///
 
 /*	Инициализация работы с базой	*/
-func initDB(log *zap.Logger, dir string, name string, autoFix bool) localSQLiteObj {
+func initDB(logger *zap.Logger, dir string, name string, autoFix bool) localSQLiteObj {
+	log := databaseLoggerObj{log: logger}
 	log.Info("Init DB..")
 
 	var dbFilePath string = ""
@@ -72,7 +73,7 @@ func initDB(log *zap.Logger, dir string, name string, autoFix bool) localSQLiteO
 	//	Инициализация переменных
 	obj := localSQLiteObj{}
 	obj.db = db
-	obj.log = log
+	obj.log = &log
 	obj.name = name
 	obj.dir = dir
 

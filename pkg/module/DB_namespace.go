@@ -83,7 +83,7 @@ func database_Array() []interface{} {
 }
 
 // Синсхронизация структуры таблицы
-func database_Sync(db *sql.DB, log *zap.Logger, autoFix bool) bool {
+func database_Sync(db *sql.DB, log *databaseLoggerObj, autoFix bool) bool {
 	tableArr := database_Array()
 	isOk := true
 
