@@ -152,7 +152,8 @@ func (obj *_historyFall_dbFile) Search(fileName *string) (uint32, bool) {
 		return retID, status
 	}
 
-	//
+	//	Загрузка данных
+	status = true
 	err := obj.globalObj.db.QueryRow("SELECT `id` FROM `database_hf_pkg` WHERE `key` = ?", *fileName).Scan(&retID)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{

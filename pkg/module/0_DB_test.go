@@ -95,13 +95,13 @@ func Test_readWriteDB(t *testing.T) {
 		vectorID := obj.AddUpdPKG(&file, &oldText, &newText)
 		fileID, fileStatus := db.File.Search(&file)
 
-		//	Проверка на
+		//	Проверка на существование файла в базе
 		test.fail(fileStatus, "File.Search", file, strconv.Itoa(int(fileID)))
 
 		//	Проверка на валидное добавление с обновлением
 		test.fail(vectorID == uint32((pos+1)*2), "AddUpdPKG:add", file, strconv.Itoa(int(vectorID))+" = "+strconv.Itoa((pos+1)*2))
 
-		//	Проверяем существование в базе
+		//	Проверяем существование вектора в базе
 		_, isset1 := db.Vector.getInfo(vectorID - 1)
 		_, isset2 := db.Vector.getInfo(vectorID)
 		test.fail(isset1, "AddUpdPKG:isset", file, strconv.Itoa(int(vectorID-1)), strconv.FormatBool(isset1))
