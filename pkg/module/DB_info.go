@@ -34,15 +34,23 @@ func (obj localSQLiteObj) getInfo(name string) (string, bool) {
 }
 
 // /	#############################################################################################	///
-type _historyFall_dbVersion struct {
+type _historyFall_dbVersionObj struct {
 	globalObj *localSQLiteObj
 	log       *localModulLoggerObj
 
 	ver string //	Версия используемой структуры
 }
 
+func _historyFall_dbVersionObjInit(globalObj *localSQLiteObj) _historyFall_dbVersionObj {
+	log := localModulLoggerInit(globalObj.log)
+	return _historyFall_dbVersionObj{
+		globalObj: globalObj,
+		log:       &log,
+	}
+}
+
 /*	Версия инициализированый сборки	*/
-func (obj _historyFall_dbVersion) Get() string {
+func (obj _historyFall_dbVersionObj) Get() string {
 	version, status := obj.globalObj.getInfo("ver")
 
 	if status {
@@ -53,7 +61,7 @@ func (obj _historyFall_dbVersion) Get() string {
 }
 
 /*	Установка версии автоматом из константы c предпроверкой	*/
-func (obj _historyFall_dbVersion) Set() {
+func (obj _historyFall_dbVersionObj) Set() {
 	status := database_Sync(obj.globalObj.db, obj.globalObj.log, false)
 	if status {
 		obj.globalObj.setInfo("ver", constVersionHistoryFall)
@@ -61,15 +69,23 @@ func (obj _historyFall_dbVersion) Set() {
 }
 
 // /	#############################################################################################	///
-type _historyFall_dbExtensions struct {
+type _historyFall_dbExtensionsObj struct {
 	globalObj *localSQLiteObj
 	log       *localModulLoggerObj
 
 	list []string //Допустимые расширения файлов
 }
 
+func _historyFall_dbExtensionsObjInit(globalObj *localSQLiteObj) _historyFall_dbExtensionsObj {
+	log := localModulLoggerInit(globalObj.log)
+	return _historyFall_dbExtensionsObj{
+		globalObj: globalObj,
+		log:       &log,
+	}
+}
+
 /*	Разрещенные расширения файлов	*/
-func (obj _historyFall_dbExtensions) Get() []string {
+func (obj _historyFall_dbExtensionsObj) Get() []string {
 	extensions, status := obj.globalObj.getInfo("extensions")
 
 	if status {
@@ -80,7 +96,7 @@ func (obj _historyFall_dbExtensions) Get() []string {
 }
 
 /* Установка расширений */
-func (obj _historyFall_dbExtensions) Set(arr []string) {
+func (obj _historyFall_dbExtensionsObj) Set(arr []string) {
 	var filtered []string
 	re := regexp.MustCompile("[a-z0-9]+")
 

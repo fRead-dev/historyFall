@@ -7,15 +7,23 @@ import (
 	"time"
 )
 
-type _historyFall_dbTimeline struct {
+type historyFall_dbTimelineObj struct {
 	globalObj *localSQLiteObj
 	log       *localModulLoggerObj
+}
+
+func historyFall_dbTimelineObjInit(globalObj *localSQLiteObj) historyFall_dbTimelineObj {
+	log := localModulLoggerInit(globalObj.log)
+	return historyFall_dbTimelineObj{
+		globalObj: globalObj,
+		log:       &log,
+	}
 }
 
 // /	#############################################################################################	///
 
 // getComment Получение коментария к точке если он есть
-func (obj *_historyFall_dbTimeline) getComment(id uint32) []byte {
+func (obj *historyFall_dbTimelineObj) getComment(id uint32) []byte {
 	var value []byte
 
 	err := obj.globalObj.db.QueryRow("SELECT `data` FROM `database_hf_timelineComments` WHERE `id`=?", id).Scan(&value)
@@ -31,7 +39,7 @@ func (obj *_historyFall_dbTimeline) getComment(id uint32) []byte {
 }
 
 // getSearchSQL	Получение списка ID по условиям с параметрами
-func (obj *_historyFall_dbTimeline) getSearchSQL(query string, args ...any) []uint32 {
+func (obj *historyFall_dbTimelineObj) getSearchSQL(query string, args ...any) []uint32 {
 	var bufArr []uint32
 
 	rows, err := obj.globalObj.db.Query(query, args)
@@ -48,7 +56,7 @@ func (obj *_historyFall_dbTimeline) getSearchSQL(query string, args ...any) []ui
 }
 
 // getLastVer Получить последнюю версию по файлу в базе
-func (obj *_historyFall_dbTimeline) getLastVer(fileID uint32) (uint16, uint32) {
+func (obj *historyFall_dbTimelineObj) getLastVer(fileID uint32) (uint16, uint32) {
 	var ver uint16
 	var id uint32
 	status := true
@@ -70,7 +78,7 @@ func (obj *_historyFall_dbTimeline) getLastVer(fileID uint32) (uint16, uint32) {
 }
 
 // getUINT	Получение числового значения поля (только для внутреннего)
-func (obj *_historyFall_dbTimeline) getUINT(id uint32, column string) uint64 {
+func (obj *historyFall_dbTimelineObj) getUINT(id uint32, column string) uint64 {
 	var value uint64
 
 	err := obj.globalObj.db.QueryRow("SELECT ? FROM `database_hf_timeline` WHERE `id`=? LIMIT 1;", column, id).Scan(&value)
@@ -88,7 +96,7 @@ func (obj *_historyFall_dbTimeline) getUINT(id uint32, column string) uint64 {
 // /	#############################################################################################	///
 
 /*	Получение точки истории по ID */
-func (obj *_historyFall_dbTimeline) Get(id uint32) (database_hf_timeline, bool) {
+func (obj *historyFall_dbTimelineObj) Get(id uint32) (database_hf_timeline, bool) {
 	retObj := database_hf_timeline{}
 	status := true
 
@@ -131,7 +139,7 @@ func (obj *_historyFall_dbTimeline) Get(id uint32) (database_hf_timeline, bool) 
 	return retObj, status
 }
 
-func (obj *_historyFall_dbTimeline) GetVer(id uint32) uint16 {
+func (obj *historyFall_dbTimelineObj) GetVer(id uint32) uint16 {
 	value := obj.getUINT(id, "ver")
 
 	if value > 0 {
@@ -140,18 +148,18 @@ func (obj *_historyFall_dbTimeline) GetVer(id uint32) uint16 {
 		return 1
 	}
 }
-func (obj *_historyFall_dbTimeline) GetFile(id uint32) uint32 {
+func (obj *historyFall_dbTimelineObj) GetFile(id uint32) uint32 {
 	return uint32(obj.getUINT(id, "file"))
 }
-func (obj *_historyFall_dbTimeline) GetTime(id uint32) uint64 {
+func (obj *historyFall_dbTimelineObj) GetTime(id uint32) uint64 {
 	return obj.getUINT(id, "time")
 }
-func (obj *_historyFall_dbTimeline) GetVector(id uint32) uint32 {
+func (obj *historyFall_dbTimelineObj) GetVector(id uint32) uint32 {
 	return uint32(obj.getUINT(id, "vector"))
 }
 
 /* Добавление новой точки (Если дубль то вернет указатель на него)  */
-func (obj *_historyFall_dbTimeline) Add(fileID uint32, vectorID uint32) uint32 {
+func (obj *historyFall_dbTimelineObj) Add(fileID uint32, vectorID uint32) uint32 {
 	if fileID == 0 {
 		return 0
 	}
@@ -193,7 +201,7 @@ func (obj *_historyFall_dbTimeline) Add(fileID uint32, vectorID uint32) uint32 {
 }
 
 /* Добавление новой точки С коментарием к ней */
-func (obj *_historyFall_dbTimeline) AddComment(fileID uint32, vectorID uint32, comment *[]byte) uint32 {
+func (obj *historyFall_dbTimelineObj) AddComment(fileID uint32, vectorID uint32, comment *[]byte) uint32 {
 	id := obj.Add(fileID, vectorID)
 
 	//	Сжатие
@@ -214,7 +222,7 @@ func (obj *_historyFall_dbTimeline) AddComment(fileID uint32, vectorID uint32, c
 // /	#############################################################################################	///
 
 /*	Получение вектора таймлайна по файлу	*/
-func (obj *_historyFall_dbTimeline) SearchFile(fileID uint32, minVersion uint16, maxVersion uint16) []uint32 {
+func (obj *historyFall_dbTimelineObj) SearchFile(fileID uint32, minVersion uint16, maxVersion uint16) []uint32 {
 	if fileID == 0 {
 		return []uint32{}
 	}
@@ -232,7 +240,7 @@ func (obj *_historyFall_dbTimeline) SearchFile(fileID uint32, minVersion uint16,
 }
 
 /* Получение вектора за временной промежуток */
-func (obj *_historyFall_dbTimeline) SearchTime(fileID uint32, begin time.Time, end time.Time) []uint32 {
+func (obj *historyFall_dbTimelineObj) SearchTime(fileID uint32, begin time.Time, end time.Time) []uint32 {
 	if fileID == 0 {
 		return []uint32{}
 	}
@@ -256,7 +264,7 @@ func (obj *_historyFall_dbTimeline) SearchTime(fileID uint32, begin time.Time, e
 }
 
 /* Получение списка точек которые соотвествуют вектору */
-func (obj *_historyFall_dbTimeline) SearchVector(vectorID uint32) []uint32 {
+func (obj *historyFall_dbTimelineObj) SearchVector(vectorID uint32) []uint32 {
 	if vectorID == 0 {
 		return []uint32{}
 	}

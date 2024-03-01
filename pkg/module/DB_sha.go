@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type _historyFall_dbSHA struct {
+type _historyFall_dbShaObj struct {
 	globalObj *localSQLiteObj
 	log       *localModulLoggerObj
 
@@ -15,10 +15,18 @@ type _historyFall_dbSHA struct {
 	cacheLimit uint16            //	Максимальный размер кеша для ускорения операций
 }
 
+func _historyFall_dbShaObjInit(globalObj *localSQLiteObj) _historyFall_dbShaObj {
+	log := localModulLoggerInit(globalObj.log)
+	return _historyFall_dbShaObj{
+		globalObj: globalObj,
+		log:       &log,
+	}
+}
+
 // /	#############################################################################################	///
 
 /*	Очистка кеша	*/
-func (obj *_historyFall_dbSHA) ClearCache() {
+func (obj *_historyFall_dbShaObj) ClearCache() {
 	if obj.cache != nil {
 		obj.cache = nil
 		obj.cacheKeys = nil
@@ -29,18 +37,18 @@ func (obj *_historyFall_dbSHA) ClearCache() {
 }
 
 /*	Получить размер кеша	*/
-func (obj *_historyFall_dbSHA) GetCacheLimit() uint16 {
+func (obj *_historyFall_dbShaObj) GetCacheLimit() uint16 {
 	return obj.cacheLimit
 }
 
 /* Изменить размер кеша */
-func (obj *_historyFall_dbSHA) SetCacheLimit(limit uint16) {
+func (obj *_historyFall_dbShaObj) SetCacheLimit(limit uint16) {
 	obj.cacheLimit = limit
 	obj.ClearCache()
 }
 
 // addCache добаваление хеша в кеш
-func (obj *_historyFall_dbSHA) addCache(id uint64, hash string) {
+func (obj *_historyFall_dbShaObj) addCache(id uint64, hash string) {
 	if obj.cache == nil {
 		return
 	}
@@ -55,7 +63,7 @@ func (obj *_historyFall_dbSHA) addCache(id uint64, hash string) {
 }
 
 // getCache Поиск значения в кеше
-func (obj *_historyFall_dbSHA) getCache(id uint64) (string, bool) {
+func (obj *_historyFall_dbShaObj) getCache(id uint64) (string, bool) {
 	if obj.cache == nil {
 		return "", false
 	}
@@ -65,7 +73,7 @@ func (obj *_historyFall_dbSHA) getCache(id uint64) (string, bool) {
 }
 
 // searchCache Поиск по кешированным результат перебором
-func (obj *_historyFall_dbSHA) searchCache(hash *string) (uint64, bool) {
+func (obj *_historyFall_dbShaObj) searchCache(hash *string) (uint64, bool) {
 	if obj.cache == nil {
 		return 0, false
 	}
@@ -82,7 +90,7 @@ func (obj *_historyFall_dbSHA) searchCache(hash *string) (uint64, bool) {
 // /	#############################################################################################	///
 
 /* Получение хеша по ID с кешированием */
-func (obj *_historyFall_dbSHA) Get(id uint64) (string, bool) {
+func (obj *_historyFall_dbShaObj) Get(id uint64) (string, bool) {
 	if id == 0 {
 		return "NULL", false
 	}
@@ -118,7 +126,7 @@ func (obj *_historyFall_dbSHA) Get(id uint64) (string, bool) {
 }
 
 /* Поиск хеша по строке */
-func (obj *_historyFall_dbSHA) Search(hash *string) (uint64, bool) {
+func (obj *_historyFall_dbShaObj) Search(hash *string) (uint64, bool) {
 	if len(*hash) < 8 {
 		return 0, false
 	}
@@ -153,7 +161,7 @@ func (obj *_historyFall_dbSHA) Search(hash *string) (uint64, bool) {
 }
 
 /* Добавление новогo ключа */
-func (obj *_historyFall_dbSHA) Add(hash string) uint64 {
+func (obj *_historyFall_dbShaObj) Add(hash string) uint64 {
 	id, status := obj.Search(&hash)
 
 	//	Возврат если такой ключ есть
@@ -174,7 +182,7 @@ func (obj *_historyFall_dbSHA) Add(hash string) uint64 {
 }
 
 /* Добавление новогo ключа с возватом обьекта */
-func (obj *_historyFall_dbSHA) Set(hash string) database_hf_sha {
+func (obj *_historyFall_dbShaObj) Set(hash string) database_hf_sha {
 	retObj := database_hf_sha{}
 
 	retObj.ID = obj.Add(hash)

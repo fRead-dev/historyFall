@@ -6,15 +6,23 @@ import (
 	"go.uber.org/zap"
 )
 
-type _historyFall_dbVector struct {
+type historyFall_dbVectorObj struct {
 	globalObj *localSQLiteObj
 	log       *localModulLoggerObj
+}
+
+func historyFall_dbVectorObjInit(globalObj *localSQLiteObj) historyFall_dbVectorObj {
+	log := localModulLoggerInit(globalObj.log)
+	return historyFall_dbVectorObj{
+		globalObj: globalObj,
+		log:       &log,
+	}
 }
 
 // /	#############################################################################################	///
 
 // getInfo Поиск вектора по ID
-func (obj *_historyFall_dbVector) getInfo(id uint32) (database_hf_vectorInfo, bool) {
+func (obj *historyFall_dbVectorObj) getInfo(id uint32) (database_hf_vectorInfo, bool) {
 	retObj := database_hf_vectorInfo{}
 	status := true
 
@@ -36,7 +44,7 @@ func (obj *_historyFall_dbVector) getInfo(id uint32) (database_hf_vectorInfo, bo
 }
 
 // searchID Поиск совпадаюшего вектора
-func (obj *_historyFall_dbVector) searchID(oldID uint64, newID uint64) (uint32, bool) {
+func (obj *historyFall_dbVectorObj) searchID(oldID uint64, newID uint64) (uint32, bool) {
 	retID := uint32(0)
 	status := true
 
@@ -55,7 +63,7 @@ func (obj *_historyFall_dbVector) searchID(oldID uint64, newID uint64) (uint32, 
 // /	#############################################################################################	///
 
 /* Получение вектора по ID */
-func (obj *_historyFall_dbVector) Get(id uint32) (database_hf_vectorsData, bool) {
+func (obj *historyFall_dbVectorObj) Get(id uint32) (database_hf_vectorsData, bool) {
 	retObj := database_hf_vectorsData{}
 	status := true
 
@@ -86,7 +94,7 @@ func (obj *_historyFall_dbVector) Get(id uint32) (database_hf_vectorsData, bool)
 }
 
 /* Получить Resize по ID */
-func (obj *_historyFall_dbVector) GetResize(id uint32) int64 {
+func (obj *historyFall_dbVectorObj) GetResize(id uint32) int64 {
 	retObj, status := obj.getInfo(id)
 
 	if !status {
@@ -97,7 +105,7 @@ func (obj *_historyFall_dbVector) GetResize(id uint32) int64 {
 }
 
 /* Добавление нового вектора (Если есть совпадение то вернет указатель на него) */
-func (obj *_historyFall_dbVector) Add(data *[]byte, hashOld *string, hashNew *string, resize *int64) uint32 {
+func (obj *historyFall_dbVectorObj) Add(data *[]byte, hashOld *string, hashNew *string, resize *int64) uint32 {
 	if data == nil {
 		return 0
 	}
@@ -142,7 +150,7 @@ func (obj *_historyFall_dbVector) Add(data *[]byte, hashOld *string, hashNew *st
 //##//
 
 /* Поиск векторов по хешу  | Return( []OLD, []NEW )*/
-func (obj *_historyFall_dbVector) Search(hash *string, limit uint16) ([]uint32, []uint32) {
+func (obj *historyFall_dbVectorObj) Search(hash *string, limit uint16) ([]uint32, []uint32) {
 	var oldArr []uint32
 	var newArr []uint32
 
@@ -193,7 +201,7 @@ func (obj *_historyFall_dbVector) Search(hash *string, limit uint16) ([]uint32, 
 }
 
 /* Получение последнего указателя на вектор по OLD-хешу */
-func (obj *_historyFall_dbVector) SearchLastOld(hash *string) (uint32, bool) {
+func (obj *historyFall_dbVectorObj) SearchLastOld(hash *string) (uint32, bool) {
 	oldArr, _ := obj.Search(hash, 1)
 
 	if len(oldArr) > 0 {
@@ -204,7 +212,7 @@ func (obj *_historyFall_dbVector) SearchLastOld(hash *string) (uint32, bool) {
 }
 
 /* Получение последнего указателя на вектор по NEW-хешу */
-func (obj *_historyFall_dbVector) SearchLastNew(hash *string) (uint32, bool) {
+func (obj *historyFall_dbVectorObj) SearchLastNew(hash *string) (uint32, bool) {
 	_, newArr := obj.Search(hash, 1)
 
 	if len(newArr) > 0 {

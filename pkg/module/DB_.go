@@ -18,22 +18,22 @@ type localSQLiteObj struct {
 	name string //	Название директории за которую отвечает historyFall
 	dir  string //	полный путь к дериктории
 
-	Extensions _historyFall_dbExtensions
-	Version    _historyFall_dbVersion
+	Extensions _historyFall_dbExtensionsObj
+	Version    _historyFall_dbVersionObj
 	Create     func() uint64
 	Update     func() uint64
 
-	SHA      _historyFall_dbSHA
-	Vector   _historyFall_dbVector
-	File     _historyFall_dbFile
-	Timeline _historyFall_dbTimeline
+	SHA      _historyFall_dbShaObj
+	Vector   historyFall_dbVectorObj
+	File     _historyFall_dbFileObj
+	Timeline historyFall_dbTimelineObj
 }
 
 ///	#############################################################################################	///
 
 /*	Инициализация работы с базой	*/
 func initDB(logger *zap.Logger, dir string, name string, autoFix bool) localSQLiteObj {
-	log := globalModulLoggerObj{log: logger}
+	log := globalModulLoggerInit(logger)
 	log.Info("Init DB..")
 
 	var dbFilePath string = ""
@@ -77,12 +77,12 @@ func initDB(logger *zap.Logger, dir string, name string, autoFix bool) localSQLi
 	obj.name = name
 	obj.dir = dir
 
-	obj.Extensions = _historyFall_dbExtensions{globalObj: &obj, log: &localModulLoggerObj{&log}}
-	obj.Version = _historyFall_dbVersion{globalObj: &obj, log: &localModulLoggerObj{&log}}
-	obj.SHA = _historyFall_dbSHA{globalObj: &obj, log: &localModulLoggerObj{&log}}
-	obj.Vector = _historyFall_dbVector{globalObj: &obj, log: &localModulLoggerObj{&log}}
-	obj.File = _historyFall_dbFile{globalObj: &obj, log: &localModulLoggerObj{&log}}
-	obj.Timeline = _historyFall_dbTimeline{globalObj: &obj, log: &localModulLoggerObj{&log}}
+	obj.Extensions = _historyFall_dbExtensionsObjInit(&obj)
+	obj.Version = _historyFall_dbVersionObjInit(&obj)
+	obj.SHA = _historyFall_dbShaObjInit(&obj)
+	obj.Vector = historyFall_dbVectorObjInit(&obj)
+	obj.File = _historyFall_dbFileObjInit(&obj)
+	obj.Timeline = historyFall_dbTimelineObjInit(&obj)
 
 	obj.Create = func() uint64 { return obj.getCreate() }
 	obj.Update = func() uint64 { return obj.getUpdate() }

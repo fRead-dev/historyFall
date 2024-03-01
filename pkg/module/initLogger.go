@@ -11,6 +11,12 @@ type globalModulLoggerObj struct {
 	log *zap.Logger
 }
 
+func globalModulLoggerInit(log *zap.Logger) globalModulLoggerObj {
+	return globalModulLoggerObj{
+		log: log,
+	}
+}
+
 //    Черный: \033[30m
 //    Красный: \033[31m
 //    Зеленый: \033[32m
@@ -100,6 +106,10 @@ type localModulLoggerObj struct {
 	log *globalModulLoggerObj
 
 	rec bool
+}
+
+func localModulLoggerInit(log *globalModulLoggerObj) localModulLoggerObj {
+	return localModulLoggerObj{log, false}
 }
 
 func (obj *localModulLoggerObj) callerFunc() zap.Field {
