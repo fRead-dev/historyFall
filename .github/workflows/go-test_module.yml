@@ -38,6 +38,7 @@ jobs:
           pkg/module/go.sum
           go.sum
         key: ${{ runner.os }}-go-local
+        restore-keys: ${{ runner.os }}-go-
 
     - name: Cache [macos] init
       if: ${{ matrix.os == 'macos-latest' }}
@@ -49,6 +50,7 @@ jobs:
           pkg/module/go.sum
           go.sum
         key: ${{ runner.os }}-go-local
+        restore-keys: ${{ runner.os }}-go-
         enableCrossOsArchive: true
 
     - name: Cache [windows] init
@@ -61,6 +63,7 @@ jobs:
           pkg/module/go.sum
           go.sum
         key: ${{ runner.os }}-go-local
+        restore-keys: ${{ runner.os }}-go-
         enableCrossOsArchive: true
 
 ########################################################################################################################
