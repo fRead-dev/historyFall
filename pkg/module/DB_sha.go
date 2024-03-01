@@ -138,7 +138,12 @@ func (obj *_historyFall_dbShaObj) Get(id uint64) (string, bool) {
 
 /* Поиск хеша по строке */
 func (obj *_historyFall_dbShaObj) Search(hash *string) (uint64, bool) {
-	if len(*hash) < 8 {
+	if len(*hash) < 2 {
+		obj.log.error_short("hash", 2)
+		return 0, false
+	}
+	if len(*hash) > 42 {
+		obj.log.error_long("hash", 256)
 		return 0, false
 	}
 
@@ -174,6 +179,15 @@ func (obj *_historyFall_dbShaObj) Search(hash *string) (uint64, bool) {
 
 /* Добавление новогo ключа */
 func (obj *_historyFall_dbShaObj) Add(hash string) uint64 {
+	if len(hash) < 2 {
+		obj.log.error_short("hash", 2)
+		return 0
+	}
+	if len(hash) > 42 {
+		obj.log.error_long("hash", 256)
+		return 0
+	}
+
 	id, status := obj.Search(&hash)
 
 	//	Возврат если такой ключ есть
@@ -197,6 +211,20 @@ func (obj *_historyFall_dbShaObj) Add(hash string) uint64 {
 /* Добавление новогo ключа с возватом обьекта */
 func (obj *_historyFall_dbShaObj) Set(hash string) database_hf_sha {
 	retObj := database_hf_sha{}
+
+	if hash == NULL_S {
+		obj.log.debug("NULL hash")
+		return retObj
+	}
+
+	if len(hash) < 2 {
+		obj.log.error_short("hash", 2)
+		return retObj
+	}
+	if len(hash) > 42 {
+		obj.log.error_long("hash", 256)
+		return retObj
+	}
 
 	retObj.ID = obj.Add(hash)
 	retObj.KEY = hash

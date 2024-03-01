@@ -50,10 +50,6 @@ func (obj *historyFall_dbVectorObj) getInfo(id uint32) (database_hf_vectorInfo, 
 
 // searchID Поиск совпадаюшего вектора
 func (obj *historyFall_dbVectorObj) searchID(oldID uint64, newID uint64) (uint32, bool) {
-	if oldID == 0 {
-		obj.log.error_zero("oldID")
-		return 0, false
-	}
 	if newID == 0 {
 		obj.log.error_zero("newID")
 		return 0, false
