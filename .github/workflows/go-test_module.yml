@@ -81,7 +81,8 @@ jobs:
           go mod tidy
         fi
         if [ ! -f "pkg/module/go.sum" ]; then
-          go mod tidy pkg/module/
+          cd pkg/module/
+          go mod tidy
         fi
       working-directory: ${{ github.workspace }}
 
@@ -92,7 +93,8 @@ jobs:
           go mod tidy
         }
         if (-not (Test-Path "pkg\module\go.sum")) {
-          go mod tidy pkg\module\
+          cd pkg\module\
+          go mod tidy
         }
       working-directory: ${{ github.workspace }}
 
