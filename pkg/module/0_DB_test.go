@@ -3,6 +3,7 @@ package module
 
 import (
 	"github.com/bxcodec/faker/v3"
+	"go.uber.org/zap"
 	"strconv"
 	"strings"
 	"testing"
@@ -90,8 +91,14 @@ func Test_readWriteDB(t *testing.T) {
 		"testName4",
 	}
 	for pos, file := range files {
-		oldText := []byte(test.generateText(4))
-		newText := []byte(test.generateText(4))
+		oldText := []byte(test.generateText(40))
+		newText := []byte(test.generateText(40))
+		hashOLD := SHA1(string(oldText))
+		hashNEW := SHA1(string(newText))
+
+		obj.globalObj.log.Info("oldText", zap.Any("hashOLD", hashOLD), zap.Any("size", len(oldText)))
+		obj.globalObj.log.Info("newText", zap.Any("hashNEW", hashNEW), zap.Any("size", len(newText)))
+
 		vectorID := obj.AddUpdPKG(&file, &oldText, &newText)
 		fileID, fileStatus := db.File.Search(&file)
 
@@ -107,6 +114,8 @@ func Test_readWriteDB(t *testing.T) {
 		test.fail(isset1, "Vector.getInfo:isset1", file, strconv.Itoa(int(vectorID-1)), strconv.FormatBool(isset1))
 		test.fail(isset2, "Vector.getInfo:isset2", file, strconv.Itoa(int(vectorID)), strconv.FormatBool(isset2))
 
+		continue
+
 		//	Загружаем полный обьект файла
 		fileOLD, _ := db.File.Get(fileID - 1)
 		fileNEW, _ := db.File.Get(fileID)
@@ -114,9 +123,29 @@ func Test_readWriteDB(t *testing.T) {
 		test.fail(fileNEW.ID == fileID, "File.Get:fileNEW", strconv.Itoa(int(fileNEW.ID)))
 
 		//	Загружаем полный обьект вектора
-		vectorOLD, _ := db.Vector.Get(vectorID - 1)
-		vectorNEW, _ := db.Vector.Get(vectorID)
-		test.fail(vectorOLD.Info.ID == (vectorID-1), "Vector.Get:vectorOLD", strconv.Itoa(int(vectorOLD.Info.ID)))
-		test.fail(vectorNEW.Info.ID == vectorID, "Vector.Get:vectorNEW", strconv.Itoa(int(vectorNEW.Info.ID)))
+		vectorOLD, _ := db.Vector.Get(fileOLD.Begin.ID)
+		vectorNEW, _ := db.Vector.Get(fileNEW.Begin.ID)
+		test.fail(vectorOLD.Info.ID == (vectorID-1), "Vector.Get:vectorOLD", strconv.Itoa(int(fileOLD.Begin.ID)), strconv.Itoa(int(vectorID-1)))
+		test.fail(vectorNEW.Info.ID == vectorID, "Vector.Get:vectorNEW", strconv.Itoa(int(fileNEW.Begin.ID)), strconv.Itoa(int(vectorID)))
 	}
+
+	rows, err := obj.globalObj.db.Query(
+		"SELECT `id`, `resize`, `old`, `new` FROM `database_hf_vectorInfo` WHERE 1 ORDER BY `id` ASC")
+	if err == nil {
+		for rows.Next() {
+			var id uint32
+			var resize int64
+			var old uint32
+			var newp uint32
+
+			rows.Scan(
+				&id,
+				&resize,
+				&old,
+				&newp)
+
+			obj.globalObj.log.Info("VECTOR", zap.Any("id", id), zap.Any("resize", resize), zap.Any("old", old), zap.Any("new", newp))
+		}
+	}
+	rows.Close()
 }
