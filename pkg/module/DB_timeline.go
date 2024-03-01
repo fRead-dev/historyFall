@@ -21,7 +21,7 @@ func (obj *_historyFall_dbTimeline) getComment(id uint32) []byte {
 	err := obj.globalObj.db.QueryRow("SELECT `data` FROM `database_hf_timelineComments` WHERE `id`=?", id).Scan(&value)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
-			obj.globalObj.log.Error("DB", zap.String("func", "Timeline:getComment"), zap.Error(err))
+			obj.log.error("QueryRow", err, zap.Any("id", id))
 		}
 
 		return nil
@@ -57,7 +57,7 @@ func (obj *_historyFall_dbTimeline) getLastVer(fileID uint32) (uint16, uint32) {
 	err := obj.globalObj.db.QueryRow("SELECT `ver`, `id` FROM `database_hf_timeline` WHERE `file` = ? ORDER BY `ver` ASC LIMIT 1", fileID).Scan(&ver, &id)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением
-			obj.globalObj.log.Error("DB", zap.String("func", "Timeline:getLastVer"), zap.Error(err))
+			obj.log.error("QueryRow", err, zap.Any("fileID", fileID))
 		}
 		status = false
 	}
@@ -76,7 +76,7 @@ func (obj *_historyFall_dbTimeline) getUINT(id uint32, column string) uint64 {
 	err := obj.globalObj.db.QueryRow("SELECT ? FROM `database_hf_timeline` WHERE `id`=? LIMIT 1;", column, id).Scan(&value)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
-			obj.globalObj.log.Error("DB", zap.String("func", "Timeline:getUINT32"), zap.String("column", column), zap.Error(err))
+			obj.log.error("QueryRow", err, zap.Any("id", id), zap.Any("column", column))
 		}
 
 		return 0
@@ -102,7 +102,7 @@ func (obj *_historyFall_dbTimeline) Get(id uint32) (database_hf_timeline, bool) 
 	)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением
-			obj.globalObj.log.Error("DB", zap.String("func", "Timeline:Get"), zap.Error(err))
+			obj.log.error("QueryRow", err, zap.Any("id", id))
 		}
 		status = false
 	}

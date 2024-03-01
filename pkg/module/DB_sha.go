@@ -103,7 +103,7 @@ func (obj *_historyFall_dbSHA) Get(id uint64) (string, bool) {
 	err := obj.globalObj.db.QueryRow("SELECT `key` FROM `database_hf_sha` WHERE `id` = ?", id).Scan(&value)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
-			obj.globalObj.log.Error("DB", zap.String("func", "SHA:Get"), zap.Error(err))
+			obj.log.error("QueryRow", err, zap.Any("id", id))
 		}
 
 		status = false
@@ -135,7 +135,7 @@ func (obj *_historyFall_dbSHA) Search(hash *string) (uint64, bool) {
 	err := obj.globalObj.db.QueryRow("SELECT `id` FROM `database_hf_sha` WHERE `key` = ?", *hash).Scan(&id)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением
-			obj.globalObj.log.Error("DB", zap.String("func", "SHA:Search"), zap.Error(err))
+			obj.log.error("QueryRow", err, zap.Any("hash", *hash))
 		}
 
 		id = 0

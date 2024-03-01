@@ -124,7 +124,7 @@ func (obj *_historyFall_dbFile) Get(id uint32) (database_hf_pkg, bool) {
 	)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением
-			obj.globalObj.log.Error("DB", zap.String("func", "File:Get"), zap.Error(err))
+			obj.log.error("QueryRow", err, zap.Any("id", id))
 		}
 		status = false
 	}

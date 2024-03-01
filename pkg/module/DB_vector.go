@@ -27,7 +27,7 @@ func (obj *_historyFall_dbVector) getInfo(id uint32) (database_hf_vectorInfo, bo
 	)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением
-			obj.globalObj.log.Error("DB", zap.String("func", "Vector:getInfo"), zap.Error(err))
+			obj.log.error("QueryRow", err, zap.Any("id", id))
 		}
 		status = false
 	}
@@ -43,7 +43,7 @@ func (obj *_historyFall_dbVector) searchID(oldID uint64, newID uint64) (uint32, 
 	err := obj.globalObj.db.QueryRow("SELECT `id` FROM `database_hf_vectorInfo` WHERE `old`=? AND `new`=?", oldID, newID).Scan(&retID)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
-			obj.globalObj.log.Error("DB", zap.String("func", "Vector:Search"), zap.Error(err))
+			obj.log.error("QueryRow", err, zap.Any("oldID", oldID), zap.Any("newID", newID))
 		}
 
 		status = false
@@ -69,7 +69,7 @@ func (obj *_historyFall_dbVector) Get(id uint32) (database_hf_vectorsData, bool)
 		)
 		if err != nil {
 			if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
-				obj.globalObj.log.Error("DB", zap.String("func", "Vector:Get"), zap.Error(err))
+				obj.log.error("QueryRow", err, zap.Any("id", id))
 			}
 
 			status = false
