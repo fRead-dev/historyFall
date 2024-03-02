@@ -5,7 +5,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 )
 
 // setInfo Установка значений для Info-таблицы
@@ -14,8 +13,8 @@ func (obj localSQLiteObj) setInfo(name string, value string) {
 
 	tx.Exec("UPDATE `database_hf_info` SET `data` = ? WHERE `name` = ?;", value, name)
 
-	currentTime := time.Now().UTC().UnixMicro()
-	tx.Exec("UPDATE `database_hf_info` SET `data` = ? WHERE `name` = 'upd';", strconv.FormatInt(currentTime, 10))
+	currentTime := timeNOW()
+	tx.Exec("UPDATE `database_hf_info` SET `data` = ? WHERE `name` = 'upd';", currentTime)
 
 	tx.End()
 }
@@ -111,12 +110,12 @@ func (obj _historyFall_dbExtensionsObj) Set(arr []string) {
 // /	#############################################################################################	///
 
 // getCreate Получение TIMESTAMP создания
-func (obj localSQLiteObj) getCreate() uint64 {
+func (obj localSQLiteObj) getCreate() uint32 {
 	value, status := obj.getInfo("create")
 
 	if status {
 		num, _ := strconv.ParseUint(value, 10, 64)
-		return num
+		return uint32(num)
 	} else {
 		obj.log.Error("getInfo:create", obj.log.callerFunc())
 		return 0
@@ -124,12 +123,12 @@ func (obj localSQLiteObj) getCreate() uint64 {
 }
 
 // getUpdate	Получение TIMESTAMP последнего обновления настоек
-func (obj localSQLiteObj) getUpdate() uint64 {
+func (obj localSQLiteObj) getUpdate() uint32 {
 	value, status := obj.getInfo("upd")
 
 	if status {
 		num, _ := strconv.ParseUint(value, 10, 64)
-		return num
+		return uint32(num)
 	} else {
 		obj.log.Error("getInfo:upd", obj.log.callerFunc())
 		return 0

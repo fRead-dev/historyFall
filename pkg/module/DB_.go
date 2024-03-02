@@ -5,9 +5,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"go.uber.org/zap"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"time"
 )
 
 // localSQLiteObj	Главный обьект класса работы с базой
@@ -20,8 +18,8 @@ type localSQLiteObj struct {
 
 	Extensions _historyFall_dbExtensionsObj
 	Version    _historyFall_dbVersionObj
-	Create     func() uint64
-	Update     func() uint64
+	Create     func() uint32
+	Update     func() uint32
 
 	SHA      _historyFall_dbShaObj
 	Vector   historyFall_dbVectorObj
@@ -84,8 +82,8 @@ func initDB(logger *zap.Logger, dir string, name string, autoFix bool) localSQLi
 	obj.File = _historyFall_dbFileObjInit(&obj)
 	obj.Timeline = historyFall_dbTimelineObjInit(&obj)
 
-	obj.Create = func() uint64 { return obj.getCreate() }
-	obj.Update = func() uint64 { return obj.getUpdate() }
+	obj.Create = func() uint32 { return obj.getCreate() }
+	obj.Update = func() uint32 { return obj.getUpdate() }
 
 	//	Проверка целостности структуры базы данных
 	if !obj.DatabaseValidation() {
@@ -162,13 +160,13 @@ func (obj localSQLiteObj) initValues() {
 	obj.log.Info("Start initValues DB")
 
 	tx := obj.beginTransaction("initValues")
-	currentTime := time.Now().UTC().UnixMicro()
+	currentTime := timeStringNOW()
 
 	infoTable := []string{
 		"'ver', '" + constVersionHistoryFall + "'",
 		"'name', '" + obj.name + "'",
-		"'create', '" + strconv.FormatInt(currentTime, 10) + "'",
-		"'upd', '" + strconv.FormatInt(currentTime, 10) + "'",
+		"'create', '" + currentTime + "'",
+		"'upd', '" + currentTime + "'",
 		"'extensions', '" + strings.Join(constTextExtensions, ".") + "'", //	Допустимые расширения для файла
 	}
 

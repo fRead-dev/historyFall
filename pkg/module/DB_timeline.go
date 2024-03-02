@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"go.uber.org/zap"
+	"math"
 	"strconv"
 	"time"
 )
@@ -257,7 +258,7 @@ func (obj *historyFall_dbTimelineObj) Add(fileID uint32, vectorID uint32) uint32
 	}
 
 	version++
-	currentTime := time.Now().UTC().UnixMicro()
+	currentTime := timeNOW()
 	tx := obj.globalObj.beginTransaction("Timeline:Add")
 
 	result := tx.Exec(
@@ -332,13 +333,13 @@ func (obj *historyFall_dbTimelineObj) SearchTime(fileID uint32, begin time.Time,
 	}
 
 	//	Переводим время в метку
-	beginTimestamp := uint64(begin.UTC().UnixMicro())
-	endTimestamp := uint64(end.UTC().UnixMicro())
+	beginTimestamp := uint32(begin.UTC().UnixMicro())
+	endTimestamp := uint32(end.UTC().UnixMicro())
 
 	//	Если верхний предел ниже нижнего то убираем его
 	if beginTimestamp <= endTimestamp {
 		obj.log.debug("MAX limit removed")
-		endTimestamp = 9999999999999999999
+		endTimestamp = math.MaxUint32
 	}
 
 	//	Загружаем все совпаения
