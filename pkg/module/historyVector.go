@@ -54,15 +54,18 @@ func Comparison(oldFile string, newFile string) ([]byte, error) {
 
 // Генерация файла более новой версии относительно вектора
 func GenerateFileFromVector(comparison *[]byte, defFilePath string, saveNewFilePath string) error {
+	if len(defFilePath) == 0 {
+		return os.ErrNotExist
+	}
+
+	//	Чтение исходного файла
+	oldFileBytes, err := ioutil.ReadFile(defFilePath)
+	if err != nil {
+		return err
+	}
 
 	//	Расжатие вектора
 	vector := string(Decompressed(comparison))
-
-	//	Чтение исходного файла
-	var oldFileBytes []byte
-	if len(defFilePath) != 0 {
-		oldFileBytes, _ = ioutil.ReadFile(defFilePath)
-	}
 
 	//	Получение нового файла из исходного по вектору
 	dmp := diffmatchpatch.New()

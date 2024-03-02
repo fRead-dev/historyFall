@@ -112,8 +112,8 @@ func (obj HistoryFallObj) LoadTextInFile(fileName string, singleRegister bool, f
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
-		for _, byte := range line {
-			run := rune(byte) //	Преобразование в символ
+		for _, bytes := range line {
+			run := rune(bytes) //	Преобразование в символ
 
 			//	Обработчик удаления fRead разметки
 			if fReadMarkup {

@@ -163,7 +163,7 @@ func (obj __TEST__DB_globalObj) AddUpdPKG(fileName *string, oldText *[]byte, new
 	//Добавляем новый файл если его нет
 	if !FileStatus {
 		tempVector := generateStoryVector(nil, oldText)                              //	Получаем расхождение
-		tempResize := int64(len(*oldText))                                           //	Считаем размер
+		tempResize := int64(sliceSize(oldText))                                      //	Считаем размер
 		vectorID = obj.globalObj.Vector.Add(&tempVector, nil, &hashOld, &tempResize) //	Вносим вектор в базу
 		fileID = obj.globalObj.File.Add(fileName, vectorID)                          //	Вносим файл в базу по вектору
 		obj.globalObj.Timeline.Add(fileID, vectorID)                                 //	Вносим файл в таймлайн
@@ -171,7 +171,7 @@ func (obj __TEST__DB_globalObj) AddUpdPKG(fileName *string, oldText *[]byte, new
 
 	//Добавляем вектор
 	tempVector := generateStoryVector(oldText, newText)                               //	Получаем расхождение
-	tempResize := int64(len(*newText) - len(*oldText))                                //	Считаем размер изменений
+	tempResize := int64(sliceSize(oldText) - sliceSize(newText))                      //	Считаем размер изменений
 	vectorID = obj.globalObj.Vector.Add(&tempVector, &hashOld, &hashNew, &tempResize) //	Вносим вектор в базу
 
 	return vectorID

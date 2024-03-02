@@ -51,6 +51,15 @@ func SHA256file(filePath string) string {
 	return fmt.Sprintf("%x", hashBytes)
 }
 
+// Единая функция для определения длинны срезов данных (допустимая длинна до 2Gb)
+func sliceSize(s *[]byte) uint32 {
+	ptr := unsafe.Pointer(s)             // Получаем указатель на первый элемент среза
+	sliceHeaderPtr := (*[3]uintptr)(ptr) // Преобразуем указатель на байт в указатель на структуру среза
+	length := sliceHeaderPtr[1]          // Извлекаем длину среза
+
+	return uint32(length)
+}
+
 //.//
 
 // Compressed Сжимает данные по ссылке
