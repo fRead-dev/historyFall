@@ -61,6 +61,9 @@ func Test_readWriteDB(t *testing.T) {
 		strings.Join(constTextExtensions, ", "),
 	)
 
+	//Пауза на слуйчай слишком хорошей тестовой машины
+	time.Sleep(100 * time.Millisecond)
+
 	//	Изменение поддерживаемых расщирений
 	newExtensions := []string{
 		faker.Word(),
