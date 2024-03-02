@@ -4,22 +4,38 @@ import (
 	"database/sql"
 	"errors"
 	"go.uber.org/zap"
+	"strconv"
 	"time"
 )
 
-// /	#############################################################################################	///
-type _historyFall_dbTimeline struct {
+type historyFall_dbTimelineObj struct {
 	globalObj *localSQLiteObj
+	log       *localModulLoggerObj
 }
 
+func historyFall_dbTimelineObjInit(globalObj *localSQLiteObj) historyFall_dbTimelineObj {
+	log := localModulLoggerInit(globalObj.log)
+	return historyFall_dbTimelineObj{
+		globalObj: globalObj,
+		log:       &log,
+	}
+}
+
+// /	#############################################################################################	///
+
 // getComment Получение коментария к точке если он есть
-func (obj *_historyFall_dbTimeline) getComment(id uint32) []byte {
+func (obj *historyFall_dbTimelineObj) getComment(id uint32) []byte {
 	var value []byte
+
+	if id == 0 {
+		obj.log.error_zero("id")
+		return value
+	}
 
 	err := obj.globalObj.db.QueryRow("SELECT `data` FROM `database_hf_timelineComments` WHERE `id`=?", id).Scan(&value)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
-			obj.globalObj.log.Error("DB", zap.String("func", "Timeline:getComment"), zap.Error(err))
+			obj.log.error("QueryRow", err, zap.Any("id", id))
 		}
 
 		return nil
@@ -29,7 +45,7 @@ func (obj *_historyFall_dbTimeline) getComment(id uint32) []byte {
 }
 
 // getSearchSQL	Получение списка ID по условиям с параметрами
-func (obj *_historyFall_dbTimeline) getSearchSQL(query string, args ...any) []uint32 {
+func (obj *historyFall_dbTimelineObj) getSearchSQL(query string, args ...any) []uint32 {
 	var bufArr []uint32
 
 	rows, err := obj.globalObj.db.Query(query, args)
@@ -46,16 +62,21 @@ func (obj *_historyFall_dbTimeline) getSearchSQL(query string, args ...any) []ui
 }
 
 // getLastVer Получить последнюю версию по файлу в базе
-func (obj *_historyFall_dbTimeline) getLastVer(fileID uint32) (uint16, uint32) {
+func (obj *historyFall_dbTimelineObj) getLastVer(fileID uint32) (uint16, uint32) {
 	var ver uint16
 	var id uint32
 	status := true
+
+	if fileID == 0 {
+		obj.log.error_zero("fileID")
+		return 0, 0
+	}
 
 	//	Поиск по базе
 	err := obj.globalObj.db.QueryRow("SELECT `ver`, `id` FROM `database_hf_timeline` WHERE `file` = ? ORDER BY `ver` ASC LIMIT 1", fileID).Scan(&ver, &id)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением
-			obj.globalObj.log.Error("DB", zap.String("func", "Timeline:getLastVer"), zap.Error(err))
+			obj.log.error("QueryRow", err, zap.Any("fileID", fileID))
 		}
 		status = false
 	}
@@ -68,13 +89,18 @@ func (obj *_historyFall_dbTimeline) getLastVer(fileID uint32) (uint16, uint32) {
 }
 
 // getUINT	Получение числового значения поля (только для внутреннего)
-func (obj *_historyFall_dbTimeline) getUINT(id uint32, column string) uint64 {
+func (obj *historyFall_dbTimelineObj) getUINT(id uint32, column string) uint64 {
 	var value uint64
+
+	if id == 0 {
+		obj.log.error_zero("id")
+		return 0
+	}
 
 	err := obj.globalObj.db.QueryRow("SELECT ? FROM `database_hf_timeline` WHERE `id`=? LIMIT 1;", column, id).Scan(&value)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
-			obj.globalObj.log.Error("DB", zap.String("func", "Timeline:getUINT32"), zap.String("column", column), zap.Error(err))
+			obj.log.error("QueryRow", err, zap.Any("id", id), zap.Any("column", column))
 		}
 
 		return 0
@@ -83,12 +109,53 @@ func (obj *_historyFall_dbTimeline) getUINT(id uint32, column string) uint64 {
 	return value
 }
 
+// _print Печать содержимого таблицы (для отладки)
+func (obj *historyFall_dbTimelineObj) _print(limit uint16) {
+	obj.globalObj.log.Warn("TIMELINE \n")
+
+	rows, err := obj.globalObj.db.Query(
+		"SELECT `id`, `ver`, `time`, `file`, `vector` FROM `database_hf_timeline` WHERE 1 ORDER BY `id` ASC LIMIT ?", limit)
+	if err == nil {
+		for rows.Next() {
+			var id uint32
+			var ver uint32
+			var timeq uint64
+			var file uint32
+			var vector uint32
+			rows.Scan(
+				&id,
+				&ver,
+				&timeq,
+				&file,
+				&vector,
+			)
+
+			buf := []uint32{
+				ver,
+				uint32(timeq),
+				file,
+				vector,
+			}
+
+			obj.globalObj.log.Info("TIMELINE", zap.Any(strconv.Itoa(int(id)), buf))
+
+		}
+	}
+	rows.Close()
+	obj.globalObj.log.Warn("TIMELINE")
+}
+
 // /	#############################################################################################	///
 
 /*	Получение точки истории по ID */
-func (obj *_historyFall_dbTimeline) Get(id uint32) (database_hf_timeline, bool) {
+func (obj *historyFall_dbTimelineObj) Get(id uint32) (database_hf_timeline, bool) {
 	retObj := database_hf_timeline{}
 	status := true
+
+	if id == 0 {
+		obj.log.error_zero("id")
+		return retObj, false
+	}
 
 	//	Поиск по базе
 	err := obj.globalObj.db.QueryRow("SELECT `id`, `ver`, `time`, `file`, `vector` FROM `database_hf_timeline` WHERE `id` = ?", id).Scan(
@@ -100,7 +167,7 @@ func (obj *_historyFall_dbTimeline) Get(id uint32) (database_hf_timeline, bool) 
 	)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением
-			obj.globalObj.log.Error("DB", zap.String("func", "Timeline:Get"), zap.Error(err))
+			obj.log.error("QueryRow", err, zap.Any("id", id))
 		}
 		status = false
 	}
@@ -129,37 +196,51 @@ func (obj *_historyFall_dbTimeline) Get(id uint32) (database_hf_timeline, bool) 
 	return retObj, status
 }
 
-func (obj *_historyFall_dbTimeline) GetVer(id uint32) uint16 {
-	value := obj.getUINT(id, "ver")
-
-	if value > 0 {
-		return uint16(value)
-	} else {
+func (obj *historyFall_dbTimelineObj) GetVer(id uint32) uint16 {
+	if id == 0 {
+		obj.log.error_zero("id")
 		return 1
 	}
+
+	return uint16(obj.getUINT(id, "ver"))
 }
-func (obj *_historyFall_dbTimeline) GetFile(id uint32) uint32 {
+func (obj *historyFall_dbTimelineObj) GetFile(id uint32) uint32 {
+	if id == 0 {
+		obj.log.error_zero("id")
+		return 0
+	}
 	return uint32(obj.getUINT(id, "file"))
 }
-func (obj *_historyFall_dbTimeline) GetTime(id uint32) uint64 {
+func (obj *historyFall_dbTimelineObj) GetTime(id uint32) uint64 {
+	if id == 0 {
+		obj.log.error_zero("id")
+		return 0
+	}
 	return obj.getUINT(id, "time")
 }
-func (obj *_historyFall_dbTimeline) GetVector(id uint32) uint32 {
+func (obj *historyFall_dbTimelineObj) GetVector(id uint32) uint32 {
+	if id == 0 {
+		obj.log.error_zero("id")
+		return 0
+	}
 	return uint32(obj.getUINT(id, "vector"))
 }
 
 /* Добавление новой точки (Если дубль то вернет указатель на него)  */
-func (obj *_historyFall_dbTimeline) Add(fileID uint32, vectorID uint32) uint32 {
+func (obj *historyFall_dbTimelineObj) Add(fileID uint32, vectorID uint32) uint32 {
 	if fileID == 0 {
+		obj.log.error_zero("fileID")
 		return 0
 	}
 	if vectorID == 0 {
+		obj.log.error_zero("vectorID")
 		return 0
 	}
 
 	//Получение посленей актуальной версии и отсечение если файл не был инициализирован
 	version, idLastVer := obj.getLastVer(fileID)
 	if idLastVer == 0 {
+		obj.log.debug("File not found", zap.Any("fileID", fileID))
 		return 0
 	}
 
@@ -171,6 +252,7 @@ func (obj *_historyFall_dbTimeline) Add(fileID uint32, vectorID uint32) uint32 {
 	//Проверка на существование вектора
 	_, status := obj.globalObj.Vector.getInfo(vectorID)
 	if !status {
+		obj.log.debug("Vector not found", zap.Any("fileID", fileID), zap.Any("vectorID", vectorID))
 		return 0
 	}
 
@@ -178,20 +260,30 @@ func (obj *_historyFall_dbTimeline) Add(fileID uint32, vectorID uint32) uint32 {
 	currentTime := time.Now().UTC().UnixMicro()
 	tx := obj.globalObj.beginTransaction("Timeline:Add")
 
-	tx.Exec(
+	result := tx.Exec(
 		"INSERT INTO `database_hf_timeline` (`ver`, `time`, `file`, `vector`) VALUES (?, ?, ?, ?);",
 		version,
 		currentTime,
 		fileID,
 		vectorID,
 	)
+	lastInsertID, _ := result.LastInsertId()
 	tx.End()
 
-	return 0
+	return uint32(lastInsertID)
 }
 
 /* Добавление новой точки С коментарием к ней */
-func (obj *_historyFall_dbTimeline) AddComment(fileID uint32, vectorID uint32, comment *[]byte) uint32 {
+func (obj *historyFall_dbTimelineObj) AddComment(fileID uint32, vectorID uint32, comment *[]byte) uint32 {
+	if fileID == 0 {
+		obj.log.error_zero("fileID")
+		return 0
+	}
+	if vectorID == 0 {
+		obj.log.error_zero("vectorID")
+		return 0
+	}
+
 	id := obj.Add(fileID, vectorID)
 
 	//	Сжатие
@@ -212,11 +304,14 @@ func (obj *_historyFall_dbTimeline) AddComment(fileID uint32, vectorID uint32, c
 // /	#############################################################################################	///
 
 /*	Получение вектора таймлайна по файлу	*/
-func (obj *_historyFall_dbTimeline) SearchFile(fileID uint32, minVersion uint16, maxVersion uint16) []uint32 {
+func (obj *historyFall_dbTimelineObj) SearchFile(fileID uint32, minVersion uint16, maxVersion uint16) []uint32 {
 	if fileID == 0 {
+		obj.log.error_zero("fileID")
 		return []uint32{}
 	}
+
 	if maxVersion <= minVersion {
+		obj.log.debug("MAX limit removed")
 		maxVersion = 9999
 	}
 
@@ -230,8 +325,9 @@ func (obj *_historyFall_dbTimeline) SearchFile(fileID uint32, minVersion uint16,
 }
 
 /* Получение вектора за временной промежуток */
-func (obj *_historyFall_dbTimeline) SearchTime(fileID uint32, begin time.Time, end time.Time) []uint32 {
+func (obj *historyFall_dbTimelineObj) SearchTime(fileID uint32, begin time.Time, end time.Time) []uint32 {
 	if fileID == 0 {
+		obj.log.error_zero("fileID")
 		return []uint32{}
 	}
 
@@ -241,6 +337,7 @@ func (obj *_historyFall_dbTimeline) SearchTime(fileID uint32, begin time.Time, e
 
 	//	Если верхний предел ниже нижнего то убираем его
 	if beginTimestamp <= endTimestamp {
+		obj.log.debug("MAX limit removed")
 		endTimestamp = 9999999999999999999
 	}
 
@@ -254,8 +351,9 @@ func (obj *_historyFall_dbTimeline) SearchTime(fileID uint32, begin time.Time, e
 }
 
 /* Получение списка точек которые соотвествуют вектору */
-func (obj *_historyFall_dbTimeline) SearchVector(vectorID uint32) []uint32 {
+func (obj *historyFall_dbTimelineObj) SearchVector(vectorID uint32) []uint32 {
 	if vectorID == 0 {
+		obj.log.error_zero("vectorID")
 		return []uint32{}
 	}
 

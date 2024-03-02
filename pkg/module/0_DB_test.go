@@ -3,6 +3,7 @@ package module
 
 import (
 	"github.com/bxcodec/faker/v3"
+	"go.uber.org/zap"
 	"strconv"
 	"strings"
 	"testing"
@@ -10,7 +11,7 @@ import (
 )
 
 func Test_initDB(t *testing.T) {
-	test := __TEST__Init(t, __TEST__readLVL())
+	test := __TEST__Init(t, __TEST__readLVL(), "initDB")
 	defer test.Close()
 
 	db := initDB(test.log, "__TEST__", "", false)
@@ -29,7 +30,7 @@ func Test_initDB(t *testing.T) {
 }
 
 func Test_readWriteDB(t *testing.T) {
-	test := __TEST__Init(t, __TEST__readLVL())
+	test := __TEST__Init(t, __TEST__readLVL(), "readWriteDB")
 	defer test.Close()
 
 	db := initDB(test.log, "__TEST__", "", true)
@@ -90,8 +91,14 @@ func Test_readWriteDB(t *testing.T) {
 		"testName4",
 	}
 	for pos, file := range files {
-		oldText := []byte(test.generateText(4))
-		newText := []byte(test.generateText(4))
+		oldText := []byte(test.generateText(10))
+		newText := []byte(test.generateText(10))
+		hashOLD := SHA1(string(oldText))
+		hashNEW := SHA1(string(newText))
+
+		obj.globalObj.log.Info("oldText", zap.Any("hashOLD", hashOLD), zap.Any("size", len(oldText)))
+		obj.globalObj.log.Info("newText", zap.Any("hashNEW", hashNEW), zap.Any("size", len(newText)))
+
 		vectorID := obj.AddUpdPKG(&file, &oldText, &newText)
 		fileID, fileStatus := db.File.Search(&file)
 
@@ -104,7 +111,26 @@ func Test_readWriteDB(t *testing.T) {
 		//	Проверяем существование вектора в базе
 		_, isset1 := db.Vector.getInfo(vectorID - 1)
 		_, isset2 := db.Vector.getInfo(vectorID)
-		test.fail(isset1, "AddUpdPKG:isset", file, strconv.Itoa(int(vectorID-1)), strconv.FormatBool(isset1))
-		test.fail(isset2, "AddUpdPKG:isset", file, strconv.Itoa(int(vectorID)), strconv.FormatBool(isset2))
+		test.fail(isset1, "Vector.getInfo:isset1", file, strconv.Itoa(int(vectorID-1)), strconv.FormatBool(isset1))
+		test.fail(isset2, "Vector.getInfo:isset2", file, strconv.Itoa(int(vectorID)), strconv.FormatBool(isset2))
+
+		continue
+
+		//	Загружаем полный обьект файла
+		fileOLD, _ := db.File.Get(fileID - 1)
+		fileNEW, _ := db.File.Get(fileID)
+		test.fail(fileOLD.ID == (fileID-1), "File.Get:fileOLD", strconv.Itoa(int(fileOLD.ID)))
+		test.fail(fileNEW.ID == fileID, "File.Get:fileNEW", strconv.Itoa(int(fileNEW.ID)))
+
+		//	Загружаем полный обьект вектора
+		vectorOLD, _ := db.Vector.Get(fileOLD.Begin.ID)
+		vectorNEW, _ := db.Vector.Get(fileNEW.Begin.ID)
+		test.fail(vectorOLD.Info.ID == (vectorID-1), "Vector.Get:vectorOLD", strconv.Itoa(int(fileOLD.Begin.ID)), strconv.Itoa(int(vectorID-1)))
+		test.fail(vectorNEW.Info.ID == vectorID, "Vector.Get:vectorNEW", strconv.Itoa(int(fileNEW.Begin.ID)), strconv.Itoa(int(vectorID)))
 	}
+
+	db.SHA._print(100)
+	db.Vector._print(100)
+	db.File._print(100)
+	//db.Timeline._print(100)
 }

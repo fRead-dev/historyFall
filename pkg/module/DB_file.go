@@ -4,18 +4,33 @@ import (
 	"database/sql"
 	"errors"
 	"go.uber.org/zap"
+	"strconv"
 	"time"
 )
 
-// /	#############################################################################################	///
-type _historyFall_dbFile struct {
+type _historyFall_dbFileObj struct {
 	globalObj *localSQLiteObj
+	log       *localModulLoggerObj
 
 	buf map[string]uint32 //	Буфер для словаря активных файлов
 }
 
+func _historyFall_dbFileObjInit(globalObj *localSQLiteObj) _historyFall_dbFileObj {
+	log := localModulLoggerInit(globalObj.log)
+	obj := _historyFall_dbFileObj{}
+
+	obj.log = &log
+	obj.globalObj = globalObj
+
+	obj.buf = make(map[string]uint32)
+
+	return obj
+}
+
+// /	#############################################################################################	///
+
 // searchKey	Поиск ключа по буферу
-func (obj *_historyFall_dbFile) searchKey(key *string) (uint32, bool) {
+func (obj *_historyFall_dbFileObj) searchKey(key *string) (uint32, bool) {
 	if obj.buf == nil {
 		return 0, false
 	}
@@ -29,8 +44,9 @@ func (obj *_historyFall_dbFile) searchKey(key *string) (uint32, bool) {
 }
 
 // addKey добавить ключ в буфер
-func (obj *_historyFall_dbFile) addKey(id uint32, key string) {
+func (obj *_historyFall_dbFileObj) addKey(id uint32, key string) {
 	if obj.buf == nil {
+		obj.log.error("BUF not Init", nil)
 		return
 	}
 
@@ -38,15 +54,17 @@ func (obj *_historyFall_dbFile) addKey(id uint32, key string) {
 }
 
 /* Очистка кеша */
-func (obj *_historyFall_dbFile) ClearCache() {
+func (obj *_historyFall_dbFileObj) ClearCache() {
 	if obj.buf != nil {
 		obj.buf = nil
 		obj.buf = make(map[string]uint32)
+	} else {
+		obj.log.error("BUF not Init", nil)
 	}
 }
 
 /* Автоматическая загрузка кеша из базы */
-func (obj *_historyFall_dbFile) AutoloadCache() {
+func (obj *_historyFall_dbFileObj) AutoloadCache() {
 	if obj.buf != nil {
 
 		//	Очишаем буфер перед загрузкой
@@ -62,11 +80,13 @@ func (obj *_historyFall_dbFile) AutoloadCache() {
 			}
 		}
 		rows.Close()
+	} else {
+		obj.log.error("BUF not Init", nil)
 	}
 }
 
 // updVector Обновление Записи файла
-func (obj *_historyFall_dbFile) updVector(id uint32, isDel bool, beginVectorID uint32) {
+func (obj *_historyFall_dbFileObj) updVector(id uint32, isDel bool, beginVectorID uint32) {
 	if id < 1 {
 		return
 	}
@@ -85,7 +105,7 @@ func (obj *_historyFall_dbFile) updVector(id uint32, isDel bool, beginVectorID u
 }
 
 // add строгое добавление файла с возможностью задать статус (только для внутреннего использования)
-func (obj *_historyFall_dbFile) add(fileName *string, isDel bool, beginVectorID uint32) uint32 {
+func (obj *_historyFall_dbFileObj) add(fileName *string, isDel bool, beginVectorID uint32) uint32 {
 	if len(*fileName) < 2 {
 		return 0
 	}
@@ -93,24 +113,62 @@ func (obj *_historyFall_dbFile) add(fileName *string, isDel bool, beginVectorID 
 	tx := obj.globalObj.beginTransaction("File:add")
 	currentTime := time.Now().UTC().UnixMicro()
 
-	tx.Exec(
+	result := tx.Exec(
 		"INSERT INTO `database_hf_pkg` (`key`, `isDel`, `time`, `begin`) VALUES (?, ?, ?, ?);",
 		*fileName,
 		isDel,
 		currentTime,
 		beginVectorID,
 	)
+	lastInsertID, _ := result.LastInsertId()
 	tx.End()
 
-	return 0
+	return uint32(lastInsertID)
+}
+
+// _print Печать содержимого таблицы (для отладки)
+func (obj *_historyFall_dbFileObj) _print(limit uint16) {
+	obj.globalObj.log.Warn("FILE \n")
+
+	rows, err := obj.globalObj.db.Query(
+		"SELECT `id`, `key`, `isDel`, `time` FROM `database_hf_pkg` WHERE 1 ORDER BY `id` ASC LIMIT ?", limit)
+	if err == nil {
+		for rows.Next() {
+			var id uint32
+			var key string
+			var isDel bool
+			var time uint64
+			rows.Scan(
+				&id,
+				&key,
+				&isDel,
+				&time)
+
+			buf := []string{
+				key,
+				strconv.FormatBool(isDel),
+				strconv.Itoa(int(time)),
+			}
+
+			obj.globalObj.log.Info("FILE", zap.Any(strconv.Itoa(int(id)), buf))
+
+		}
+	}
+	rows.Close()
+	obj.globalObj.log.Warn("FILE")
 }
 
 // /	#############################################################################################	///
 
 /*	Получение файла по ID */
-func (obj *_historyFall_dbFile) Get(id uint32) (database_hf_pkg, bool) {
+func (obj *_historyFall_dbFileObj) Get(id uint32) (database_hf_pkg, bool) {
 	retObj := database_hf_pkg{}
 	status := true
+
+	if id == 0 {
+		obj.log.error_zero("id")
+		return retObj, false
+	}
 
 	//	Поиск по базе
 	err := obj.globalObj.db.QueryRow("SELECT `id`, `key`, `isDel`, `time`, `begin` FROM `database_hf_pkg` WHERE `id` = ?", id).Scan(
@@ -122,7 +180,7 @@ func (obj *_historyFall_dbFile) Get(id uint32) (database_hf_pkg, bool) {
 	)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением
-			obj.globalObj.log.Error("DB", zap.String("func", "File:Get"), zap.Error(err))
+			obj.log.error("QueryRow", err, zap.Any("id", id))
 		}
 		status = false
 	}
@@ -141,14 +199,20 @@ func (obj *_historyFall_dbFile) Get(id uint32) (database_hf_pkg, bool) {
 }
 
 /* Поиск файла по названию */
-func (obj *_historyFall_dbFile) Search(fileName *string) (uint32, bool) {
+func (obj *_historyFall_dbFileObj) Search(fileName *string) (uint32, bool) {
 	if len(*fileName) < 2 {
+		obj.log.error_short("fileName", 2)
+		return 0, false
+	}
+	if len(*fileName) > 42 {
+		obj.log.error_long("fileName", 42)
 		return 0, false
 	}
 
 	//	поиск по кешу
 	retID, status := obj.searchKey(fileName)
 	if status {
+		obj.log.debug("Load from BUF", zap.String("fileName", *fileName))
 		return retID, status
 	}
 
@@ -172,14 +236,24 @@ func (obj *_historyFall_dbFile) Search(fileName *string) (uint32, bool) {
 }
 
 /* Добавление нового файла (Если есть совпадение то вернет указатель на него, обновив) */
-func (obj *_historyFall_dbFile) Add(fileName *string, beginVectorID uint32) uint32 {
+func (obj *_historyFall_dbFileObj) Add(fileName *string, beginVectorID uint32) uint32 {
+	if beginVectorID == 0 {
+		obj.log.error_zero("beginVectorID")
+		return 0
+	}
 	if len(*fileName) < 2 {
+		obj.log.error_short("fileName", 2)
+		return 0
+	}
+	if len(*fileName) > 42 {
+		obj.log.error_long("fileName", 42)
 		return 0
 	}
 
 	//	Отсечение если такого вектора нет
 	_, status := obj.globalObj.Vector.getInfo(beginVectorID)
 	if !status {
+		obj.log.debug("Vector not Found", zap.Uint32("beginVectorID", beginVectorID))
 		return 0
 	}
 
@@ -192,8 +266,10 @@ func (obj *_historyFall_dbFile) Add(fileName *string, beginVectorID uint32) uint
 			name := (*fileName) + ".old"
 			obj.add(&name, true, pcg.Begin.ID)      //	Создание новой записи для сохранения истории дубля
 			obj.updVector(id, false, beginVectorID) //	Изменение текущей записи
-		}
 
+			obj.log.debug("Buffering old File", zap.Uint32("beginVectorID", beginVectorID))
+		}
+		obj.log.debug("File is already in DB", zap.Uint32("beginVectorID", beginVectorID))
 		return id
 	}
 
@@ -202,8 +278,9 @@ func (obj *_historyFall_dbFile) Add(fileName *string, beginVectorID uint32) uint
 }
 
 /*	Изменить статус файла	*/
-func (obj *_historyFall_dbFile) UpdIsDel(id uint32, isDel bool) {
-	if id < 1 {
+func (obj *_historyFall_dbFileObj) UpdIsDel(id uint32, isDel bool) {
+	if id == 0 {
+		obj.log.error_zero("id")
 		return
 	}
 

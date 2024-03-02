@@ -9,7 +9,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"unsafe"
 )
 
 type __TEST__globalObj struct {
@@ -20,13 +19,15 @@ type __TEST__globalObj struct {
 }
 
 // zap.DebugLevel | zap.InfoLevel | zap.WarnLevel | zap.ErrorLevel
-func __TEST__Init(t *testing.T, enab zapcore.LevelEnabler) __TEST__globalObj {
+func __TEST__Init(t *testing.T, enab zapcore.LevelEnabler, msg string) __TEST__globalObj {
 	obj := __TEST__globalObj{}
 	obj.log = zaptest.NewLogger(
 		t,
 		zaptest.Level(enab),
 	)
 	obj.t = t
+
+	obj.log.Warn("\033[35m" + msg + "\033[0m")
 	return obj
 }
 func __TEST__readLVL() zapcore.LevelEnabler {
@@ -162,7 +163,7 @@ func (obj __TEST__DB_globalObj) AddUpdPKG(fileName *string, oldText *[]byte, new
 	//Добавляем новый файл если его нет
 	if !FileStatus {
 		tempVector := generateStoryVector(nil, oldText)                              //	Получаем расхождение
-		tempResize := int64(unsafe.Sizeof(*oldText))                                 //	Считаем размер
+		tempResize := int64(len(*oldText))                                           //	Считаем размер
 		vectorID = obj.globalObj.Vector.Add(&tempVector, nil, &hashOld, &tempResize) //	Вносим вектор в базу
 		fileID = obj.globalObj.File.Add(fileName, vectorID)                          //	Вносим файл в базу по вектору
 		obj.globalObj.Timeline.Add(fileID, vectorID)                                 //	Вносим файл в таймлайн
@@ -170,7 +171,7 @@ func (obj __TEST__DB_globalObj) AddUpdPKG(fileName *string, oldText *[]byte, new
 
 	//Добавляем вектор
 	tempVector := generateStoryVector(oldText, newText)                               //	Получаем расхождение
-	tempResize := int64(unsafe.Sizeof(*newText) - unsafe.Sizeof(*oldText))            //	Считаем размер изменений
+	tempResize := int64(len(*newText) - len(*oldText))                                //	Считаем размер изменений
 	vectorID = obj.globalObj.Vector.Add(&tempVector, &hashOld, &hashNew, &tempResize) //	Вносим вектор в базу
 
 	return vectorID

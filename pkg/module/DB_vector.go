@@ -4,12 +4,33 @@ import (
 	"database/sql"
 	"errors"
 	"go.uber.org/zap"
+	"strconv"
 )
 
+type historyFall_dbVectorObj struct {
+	globalObj *localSQLiteObj
+	log       *localModulLoggerObj
+}
+
+func historyFall_dbVectorObjInit(globalObj *localSQLiteObj) historyFall_dbVectorObj {
+	log := localModulLoggerInit(globalObj.log)
+	return historyFall_dbVectorObj{
+		globalObj: globalObj,
+		log:       &log,
+	}
+}
+
+// /	#############################################################################################	///
+
 // getInfo Поиск вектора по ID
-func (obj *_historyFall_dbVector) getInfo(id uint32) (database_hf_vectorInfo, bool) {
+func (obj *historyFall_dbVectorObj) getInfo(id uint32) (database_hf_vectorInfo, bool) {
 	retObj := database_hf_vectorInfo{}
 	status := true
+
+	if id == 0 {
+		obj.log.error_zero("id")
+		return retObj, false
+	}
 
 	//	Поиск по базе
 	err := obj.globalObj.db.QueryRow("SELECT `id`, `resize`, `old`, `new` FROM `database_hf_vectorInfo` WHERE `id` = ?", id).Scan(
@@ -20,7 +41,7 @@ func (obj *_historyFall_dbVector) getInfo(id uint32) (database_hf_vectorInfo, bo
 	)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением
-			obj.globalObj.log.Error("DB", zap.String("func", "Vector:getInfo"), zap.Error(err))
+			obj.log.error("QueryRow", err, zap.Any("id", id))
 		}
 		status = false
 	}
@@ -29,14 +50,19 @@ func (obj *_historyFall_dbVector) getInfo(id uint32) (database_hf_vectorInfo, bo
 }
 
 // searchID Поиск совпадаюшего вектора
-func (obj *_historyFall_dbVector) searchID(oldID uint64, newID uint64) (uint32, bool) {
+func (obj *historyFall_dbVectorObj) searchID(oldID uint64, newID uint64) (uint32, bool) {
+	if newID == 0 {
+		obj.log.error_zero("newID")
+		return 0, false
+	}
+
 	retID := uint32(0)
 	status := true
 
 	err := obj.globalObj.db.QueryRow("SELECT `id` FROM `database_hf_vectorInfo` WHERE `old`=? AND `new`=?", oldID, newID).Scan(&retID)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
-			obj.globalObj.log.Error("DB", zap.String("func", "Vector:Search"), zap.Error(err))
+			obj.log.error("QueryRow", err, zap.Any("oldID", oldID), zap.Any("newID", newID))
 		}
 
 		status = false
@@ -45,15 +71,54 @@ func (obj *_historyFall_dbVector) searchID(oldID uint64, newID uint64) (uint32, 
 	return retID, status
 }
 
-// /	#############################################################################################	///
-type _historyFall_dbVector struct {
-	globalObj *localSQLiteObj
+// _print Печать содержимого таблицы (для отладки)
+func (obj *historyFall_dbVectorObj) _print(limit uint16) {
+	var sum int64
+	obj.globalObj.log.Warn("VECTOR \n")
+
+	rows, err := obj.globalObj.db.Query(
+		"SELECT `id`, `resize`, `old`, `new` FROM `database_hf_vectorInfo` WHERE 1 ORDER BY `id` ASC LIMIT ?", limit)
+	if err == nil {
+		for rows.Next() {
+			var id uint32
+			var resize int64
+			var old uint32
+			var newp uint32
+			rows.Scan(
+				&id,
+				&resize,
+				&old,
+				&newp)
+
+			if old == 0 {
+				sum += resize
+			}
+
+			buf := []uint32{
+				uint32(resize),
+				old,
+				newp,
+			}
+
+			obj.globalObj.log.Info("VECTOR", zap.Any(strconv.Itoa(int(id)), buf))
+
+		}
+	}
+	rows.Close()
+	obj.globalObj.log.Warn("VECTOR", zap.Any("Kb", float64(sum)/1024), zap.Any("Mb", (float64(sum)/1024)/1024))
 }
 
+// /	#############################################################################################	///
+
 /* Получение вектора по ID */
-func (obj *_historyFall_dbVector) Get(id uint32) (database_hf_vectorsData, bool) {
+func (obj *historyFall_dbVectorObj) Get(id uint32) (database_hf_vectorsData, bool) {
 	retObj := database_hf_vectorsData{}
 	status := true
+
+	if id == 0 {
+		obj.log.error_zero("id")
+		return retObj, false
+	}
 
 	//	Поиск по ID
 	retObj.Info, status = obj.getInfo(id)
@@ -65,7 +130,7 @@ func (obj *_historyFall_dbVector) Get(id uint32) (database_hf_vectorsData, bool)
 		)
 		if err != nil {
 			if !errors.Is(err, sql.ErrNoRows) { //Обработка если ошибка не связана с пустым значением{
-				obj.globalObj.log.Error("DB", zap.String("func", "Vector:Get"), zap.Error(err))
+				obj.log.error("QueryRow", err, zap.Any("id", id))
 			}
 
 			status = false
@@ -82,10 +147,15 @@ func (obj *_historyFall_dbVector) Get(id uint32) (database_hf_vectorsData, bool)
 }
 
 /* Получить Resize по ID */
-func (obj *_historyFall_dbVector) GetResize(id uint32) int64 {
-	retObj, status := obj.getInfo(id)
+func (obj *historyFall_dbVectorObj) GetResize(id uint32) int64 {
+	if id == 0 {
+		obj.log.error_zero("id")
+		return 0
+	}
 
+	retObj, status := obj.getInfo(id)
 	if !status {
+		obj.log.debug("Vector not found", zap.Any("id", id))
 		return 0
 	}
 
@@ -93,8 +163,9 @@ func (obj *_historyFall_dbVector) GetResize(id uint32) int64 {
 }
 
 /* Добавление нового вектора (Если есть совпадение то вернет указатель на него) */
-func (obj *_historyFall_dbVector) Add(data *[]byte, hashOld *string, hashNew *string, resize *int64) uint32 {
+func (obj *historyFall_dbVectorObj) Add(data *[]byte, hashOld *string, hashNew *string, resize *int64) uint32 {
 	if data == nil {
+		obj.log.error_null("data")
 		return 0
 	}
 
@@ -112,6 +183,7 @@ func (obj *_historyFall_dbVector) Add(data *[]byte, hashOld *string, hashNew *st
 	//	Поиск совпадения по вектору
 	id, status := obj.searchID(oldHash.ID, newHash.ID)
 	if status {
+		obj.log.debug("Vector load from BUF", zap.Any("oldHash", oldHash.ID), zap.Any("newHash", newHash.ID))
 		return id
 	}
 
@@ -138,14 +210,16 @@ func (obj *_historyFall_dbVector) Add(data *[]byte, hashOld *string, hashNew *st
 //##//
 
 /* Поиск векторов по хешу  | Return( []OLD, []NEW )*/
-func (obj *_historyFall_dbVector) Search(hash *string, limit uint16) ([]uint32, []uint32) {
+func (obj *historyFall_dbVectorObj) Search(hash *string, limit uint16) ([]uint32, []uint32) {
 	var oldArr []uint32
 	var newArr []uint32
 
 	if hash == nil {
+		obj.log.error_null("hash")
 		return oldArr, newArr
 	}
-	if limit < 1 {
+	if limit == 0 {
+		obj.log.error_null("limit")
 		return oldArr, newArr
 	}
 
@@ -189,7 +263,7 @@ func (obj *_historyFall_dbVector) Search(hash *string, limit uint16) ([]uint32, 
 }
 
 /* Получение последнего указателя на вектор по OLD-хешу */
-func (obj *_historyFall_dbVector) SearchLastOld(hash *string) (uint32, bool) {
+func (obj *historyFall_dbVectorObj) SearchLastOld(hash *string) (uint32, bool) {
 	oldArr, _ := obj.Search(hash, 1)
 
 	if len(oldArr) > 0 {
@@ -200,7 +274,7 @@ func (obj *_historyFall_dbVector) SearchLastOld(hash *string) (uint32, bool) {
 }
 
 /* Получение последнего указателя на вектор по NEW-хешу */
-func (obj *_historyFall_dbVector) SearchLastNew(hash *string) (uint32, bool) {
+func (obj *historyFall_dbVectorObj) SearchLastNew(hash *string) (uint32, bool) {
 	_, newArr := obj.Search(hash, 1)
 
 	if len(newArr) > 0 {
