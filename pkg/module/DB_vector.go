@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"go.uber.org/zap"
+	"strconv"
 )
 
 type historyFall_dbVectorObj struct {
@@ -68,6 +69,43 @@ func (obj *historyFall_dbVectorObj) searchID(oldID uint64, newID uint64) (uint32
 	}
 
 	return retID, status
+}
+
+// _print Печать содержимого таблицы (для отладки)
+func (obj *historyFall_dbVectorObj) _print(limit uint16) {
+	var sum int64
+	obj.globalObj.log.Warn("VECTOR \n")
+
+	rows, err := obj.globalObj.db.Query(
+		"SELECT `id`, `resize`, `old`, `new` FROM `database_hf_vectorInfo` WHERE 1 ORDER BY `id` ASC LIMIT ?", limit)
+	if err == nil {
+		for rows.Next() {
+			var id uint32
+			var resize int64
+			var old uint32
+			var newp uint32
+			rows.Scan(
+				&id,
+				&resize,
+				&old,
+				&newp)
+
+			if old == 0 {
+				sum += resize
+			}
+
+			buf := []uint32{
+				uint32(resize),
+				old,
+				newp,
+			}
+
+			obj.globalObj.log.Info("VECTOR", zap.Any(strconv.Itoa(int(id)), buf))
+
+		}
+	}
+	rows.Close()
+	obj.globalObj.log.Warn("VECTOR", zap.Any("Kb", float64(sum)/1024), zap.Any("Mb", (float64(sum)/1024)/1024))
 }
 
 // /	#############################################################################################	///

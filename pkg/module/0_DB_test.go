@@ -91,8 +91,8 @@ func Test_readWriteDB(t *testing.T) {
 		"testName4",
 	}
 	for pos, file := range files {
-		oldText := []byte(test.generateText(40))
-		newText := []byte(test.generateText(40))
+		oldText := []byte(test.generateText(10))
+		newText := []byte(test.generateText(10))
 		hashOLD := SHA1(string(oldText))
 		hashNEW := SHA1(string(newText))
 
@@ -129,23 +129,8 @@ func Test_readWriteDB(t *testing.T) {
 		test.fail(vectorNEW.Info.ID == vectorID, "Vector.Get:vectorNEW", strconv.Itoa(int(fileNEW.Begin.ID)), strconv.Itoa(int(vectorID)))
 	}
 
-	rows, err := obj.globalObj.db.Query(
-		"SELECT `id`, `resize`, `old`, `new` FROM `database_hf_vectorInfo` WHERE 1 ORDER BY `id` ASC")
-	if err == nil {
-		for rows.Next() {
-			var id uint32
-			var resize int64
-			var old uint32
-			var newp uint32
-
-			rows.Scan(
-				&id,
-				&resize,
-				&old,
-				&newp)
-
-			obj.globalObj.log.Info("VECTOR", zap.Any("id", id), zap.Any("resize", resize), zap.Any("old", old), zap.Any("new", newp))
-		}
-	}
-	rows.Close()
+	db.SHA._print(100)
+	db.Vector._print(100)
+	db.File._print(100)
+	//db.Timeline._print(100)
 }

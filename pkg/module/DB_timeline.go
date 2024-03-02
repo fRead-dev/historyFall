@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"go.uber.org/zap"
+	"strconv"
 	"time"
 )
 
@@ -106,6 +107,42 @@ func (obj *historyFall_dbTimelineObj) getUINT(id uint32, column string) uint64 {
 	}
 
 	return value
+}
+
+// _print Печать содержимого таблицы (для отладки)
+func (obj *historyFall_dbTimelineObj) _print(limit uint16) {
+	obj.globalObj.log.Warn("TIMELINE \n")
+
+	rows, err := obj.globalObj.db.Query(
+		"SELECT `id`, `ver`, `time`, `file`, `vector` FROM `database_hf_timeline` WHERE 1 ORDER BY `id` ASC LIMIT ?", limit)
+	if err == nil {
+		for rows.Next() {
+			var id uint32
+			var ver uint32
+			var timeq uint64
+			var file uint32
+			var vector uint32
+			rows.Scan(
+				&id,
+				&ver,
+				&timeq,
+				&file,
+				&vector,
+			)
+
+			buf := []uint32{
+				ver,
+				uint32(timeq),
+				file,
+				vector,
+			}
+
+			obj.globalObj.log.Info("TIMELINE", zap.Any(strconv.Itoa(int(id)), buf))
+
+		}
+	}
+	rows.Close()
+	obj.globalObj.log.Warn("TIMELINE")
 }
 
 // /	#############################################################################################	///

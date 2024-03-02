@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"go.uber.org/zap"
+	"strconv"
 )
 
 type _historyFall_dbShaObj struct {
@@ -94,6 +95,29 @@ func (obj *_historyFall_dbShaObj) searchCache(hash *string) (uint64, bool) {
 	}
 
 	return 0, false
+}
+
+// _print Печать содержимого таблицы (для отладки)
+func (obj *_historyFall_dbShaObj) _print(limit uint16) {
+	obj.globalObj.log.Warn("SHA \n")
+
+	rows, err := obj.globalObj.db.Query(
+		"SELECT `id`, `key` FROM `database_hf_sha` WHERE 1 ORDER BY `id` ASC LIMIT ?", limit)
+	if err == nil {
+		for rows.Next() {
+			var id uint32
+			var key string
+			rows.Scan(
+				&id,
+				&key,
+			)
+
+			obj.globalObj.log.Info("SHA", zap.Any(strconv.Itoa(int(id)), key))
+
+		}
+	}
+	rows.Close()
+	obj.globalObj.log.Warn("SHA")
 }
 
 // /	#############################################################################################	///

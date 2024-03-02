@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"go.uber.org/zap"
+	"strconv"
 	"time"
 )
 
@@ -123,6 +124,38 @@ func (obj *_historyFall_dbFileObj) add(fileName *string, isDel bool, beginVector
 	tx.End()
 
 	return uint32(lastInsertID)
+}
+
+// _print Печать содержимого таблицы (для отладки)
+func (obj *_historyFall_dbFileObj) _print(limit uint16) {
+	obj.globalObj.log.Warn("FILE \n")
+
+	rows, err := obj.globalObj.db.Query(
+		"SELECT `id`, `key`, `isDel`, `time` FROM `database_hf_pkg` WHERE 1 ORDER BY `id` ASC LIMIT ?", limit)
+	if err == nil {
+		for rows.Next() {
+			var id uint32
+			var key string
+			var isDel bool
+			var time uint64
+			rows.Scan(
+				&id,
+				&key,
+				&isDel,
+				&time)
+
+			buf := []string{
+				key,
+				strconv.FormatBool(isDel),
+				strconv.Itoa(int(time)),
+			}
+
+			obj.globalObj.log.Info("FILE", zap.Any(strconv.Itoa(int(id)), buf))
+
+		}
+	}
+	rows.Close()
+	obj.globalObj.log.Warn("FILE")
 }
 
 // /	#############################################################################################	///
