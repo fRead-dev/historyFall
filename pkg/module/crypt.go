@@ -62,7 +62,7 @@ func sliceSize(s *[]byte) uint32 {
 	return uint32(length)
 }
 
-// timeNOW Текущая метка времени
+// timeNOW Текущая метка времени (ограничение до 2106 года)
 func timeNOW() uint32 {
 	currentTime := time.Now().UTC().UnixMicro()
 	return uint32(currentTime)

@@ -264,7 +264,7 @@ func (obj *historyFall_dbTimelineObj) Add(fileID uint32, vectorID uint32) uint32
 	result := tx.Exec(
 		"INSERT INTO `database_hf_timeline` (`ver`, `time`, `file`, `vector`) VALUES (?, ?, ?, ?);",
 		version,
-		currentTime,
+		obj.globalObj.timeToBase(currentTime),
 		fileID,
 		vectorID,
 	)
@@ -346,8 +346,8 @@ func (obj *historyFall_dbTimelineObj) SearchTime(fileID uint32, begin time.Time,
 	return obj.getSearchSQL(
 		"SELECT `id` FROM `database_hf_timeline` WHERE `file`=? AND `time`>? AND `time`<? ORDER BY `ver` ASC",
 		fileID,
-		beginTimestamp,
-		endTimestamp,
+		obj.globalObj.timeToBase(beginTimestamp),
+		obj.globalObj.timeToBase(endTimestamp),
 	)
 }
 

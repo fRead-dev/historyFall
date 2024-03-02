@@ -42,7 +42,7 @@ type database_hf_pkg struct {
 	ID    uint32 `database_name:"id" database_i:"pk ai notnull"`
 	KEY   string `database_name:"key" database_i:"notnull"` //	Название файла
 	IsDel bool   `database_name:"isDel"`                    //	Этот файл был удален?
-	Time  uint32 `database_name:"time"`                     //	Последнее обновление данных по файлу
+	Time  uint32 `database_name:"time"`                     //	Последнее обновление данных по файлу (хранит микросекунды, потому ограничение до 25,337,076,4807 года)
 
 	Begin database_hf_vectorInfo `database_name:"begin" database_fk:"database_hf_vectorInfo:id"` //	Стартовый вектор для файла, задается при создании файла
 }
@@ -53,7 +53,7 @@ type database_hf_pkg struct {
 type database_hf_timeline struct {
 	ID   uint32 `database_name:"id" database_i:"pk ai notnull"`
 	Ver  uint16 `database_name:"ver" database_i:"index"`  //	Минорная версия
-	Time uint32 `database_name:"time" database_i:"index"` //	Время создания точки
+	Time uint32 `database_name:"time" database_i:"index"` //	Время создания точки (хранит микросекунды, потому ограничение до 25,337,076,4807 года)
 
 	File   database_hf_pkg         `database_name:"file" database_i:"index" database_fk:"database_hf_pkg:id"`          //	К какому файлу относится
 	Vector database_hf_vectorsData `database_name:"vector" database_i:"index" database_fk:"database_hf_vectorInfo:id"` //	Вектор

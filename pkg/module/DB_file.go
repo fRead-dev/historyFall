@@ -95,7 +95,7 @@ func (obj *_historyFall_dbFileObj) updVector(id uint32, isDel bool, beginVectorI
 
 	tx.Exec(
 		"UPDATE `database_hf_pkg` SET `time` = ?, `isDel`=?, `begin`=? WHERE `id` = ?;",
-		currentTime,
+		obj.globalObj.timeToBase(currentTime),
 		isDel,
 		beginVectorID,
 		id,
@@ -116,7 +116,7 @@ func (obj *_historyFall_dbFileObj) add(fileName *string, isDel bool, beginVector
 		"INSERT INTO `database_hf_pkg` (`key`, `isDel`, `time`, `begin`) VALUES (?, ?, ?, ?);",
 		*fileName,
 		isDel,
-		currentTime,
+		obj.globalObj.timeToBase(currentTime),
 		beginVectorID,
 	)
 	lastInsertID, _ := result.LastInsertId()
@@ -288,7 +288,7 @@ func (obj *_historyFall_dbFileObj) UpdIsDel(id uint32, isDel bool) {
 
 	tx.Exec(
 		"UPDATE `database_hf_pkg` SET `time` = ?, `isDel`=? WHERE `id` = ?;",
-		currentTime,
+		obj.globalObj.timeToBase(currentTime),
 		isDel,
 		id,
 	)

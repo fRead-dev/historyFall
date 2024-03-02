@@ -138,6 +138,11 @@ func (obj localSQLiteObj) Enable() bool {
 	return obj.db.Ping() == nil
 }
 
+// timeFromBase	Согласование времени между программой и базой
+func (obj localSQLiteObj) timeToBase(timestamp uint32) uint64 {
+	return uint64(timestamp)
+}
+
 ///	#############################################################################################	///
 
 // beginTransaction Инициализация диалога транзакции

@@ -14,7 +14,7 @@ func (obj localSQLiteObj) setInfo(name string, value string) {
 	tx.Exec("UPDATE `database_hf_info` SET `data` = ? WHERE `name` = ?;", value, name)
 
 	currentTime := timeNOW()
-	tx.Exec("UPDATE `database_hf_info` SET `data` = ? WHERE `name` = 'upd';", currentTime)
+	tx.Exec("UPDATE `database_hf_info` SET `data` = ? WHERE `name` = 'upd';", obj.timeToBase(currentTime))
 
 	tx.End()
 }
